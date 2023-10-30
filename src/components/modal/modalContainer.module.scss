@@ -1,0 +1,135 @@
+@import "./../../styles/variables.scss";
+
+.modalContainerRoot {
+  top: 0px;
+  width: 100vw;
+  left: 0;
+  position: fixed;
+  z-index: 200;
+
+  // Modal global styling
+  :global #modal-container-root {
+    &:has(.hidden-modal) {
+      .modal-backdrop {
+        opacity: 0;
+        backdrop-filter: blur(0px);
+      }
+    }
+    &:has(.opened-modal) {
+      .modal-backdrop {
+        opacity: 1;
+        backdrop-filter: blur(3px);
+      }
+    }
+    &:has(.closed-modal) {
+      .modal-backdrop {
+        opacity: 0;
+        backdrop-filter: blur(0px);
+      }
+    }
+  }
+
+  :global .modal-backdrop {
+    position: fixed;
+    width: 100%;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    user-select: none;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 201;
+    backdrop-filter: blur(3px);
+    transition: opacity 0.3s ease-in-out, backdrop-filter 0.3s ease-in-out;
+  }
+
+  :global .modal-wrapper {
+    position: absolute;
+    width: 100%;
+    height: 100vh;
+    overflow: scroll;
+  }
+
+  :global .modal-content-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: $white;
+    border-radius: 18px;
+    overflow: hidden;
+    width: fit-content;
+    z-index: 202;
+
+    @media (max-width: map-get($grid-breakpoints, md)) {
+      top: 0px;
+      transform: translate(-50%, 2rem);
+    }
+
+    &.opened-modal {
+      pointer-events: all;
+      animation: openModal 0.3s ease-in-out forwards;
+    }
+
+    &.closed-modal {
+      pointer-events: none;
+      animation: closeModal 0.3s ease-in-out forwards;
+    }
+
+    &.hidden-modal {
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    .modal-header {
+      position: relative;
+      background-color: $primary;
+      padding: 1rem 2rem;
+      color: $white;
+      text-align: center;
+
+      .close-icon {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        user-select: none;
+        z-index: 1;
+      }
+    }
+
+    .modal-content {
+      padding: 1rem;
+    }
+
+    .modal-action-area {
+      display: flex;
+      justify-content: space-between;
+      padding: 1rem 0rem;
+
+      .button {
+        max-width: 100px;
+      }
+    }
+
+    &.modal-narrow {
+      width: clamp(270px, 85vw, 400px);
+    }
+
+    &.modal-regular {
+      width: clamp(270px, 85vw, 500px);
+    }
+
+    &.modal-wide {
+      width: clamp(270px, 85vw, 600px);
+    }
+
+    &.modal-wider {
+      width: clamp(270px, 85vw, 800px);
+    }
+
+    &.modal-widest {
+      width: 90%;
+    }
+  }
+}

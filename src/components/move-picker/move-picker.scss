@@ -1,0 +1,45 @@
+@import "./../../styles/variables.scss";
+
+.move-picker-container {
+  z-index: 2;
+  position: relative;
+  width: min(600px, 80vw);
+  height: min(600px, 80vh);
+
+  // width: 100vw;
+  // height: 100vh;
+
+  overflow: hidden;
+
+  .move-item-container {
+    position: absolute;
+    transform: translate(-50%, -50%);
+
+    user-select: none;
+    aspect-ratio: 1;
+    padding: 1rem;
+    border-radius: 100%;
+    border: 2px solid $pale-orange;
+    background-color: $white;
+    transition: background-color 0.2s ease-out, border 0.2s ease-out;
+    cursor: pointer;
+
+    img {
+      user-select: none;
+      pointer-events: none;
+      width: min(120px, 15vw);
+    }
+
+    &:hover {
+      background-color: $pale-orange !important;
+      border: 2px solid $pale-orange;
+    }
+  }
+
+  .arrows-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: -1;
+  }
+}

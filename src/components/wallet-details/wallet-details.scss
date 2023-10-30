@@ -1,0 +1,27 @@
+@import "./../../styles/variables.scss";
+
+.wallet-details {
+  position: fixed;
+  z-index: 1;
+  right: 1.5rem;
+  top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  // padding: 2vw;
+
+  .tooltip-text {
+    top: 0;
+    left: unset !important;
+    right: calc(100% + 1rem);
+    transform: translate(0, -20%) !important;
+  }
+}
+
+.wallet-info-item {
+  display: flex;
+  align-items: center;
+  margin-top: 1rem;
+  cursor: pointer;
+  color: $white;
+}

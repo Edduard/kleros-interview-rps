@@ -1,0 +1,26 @@
+$primary: #4d00b4;
+$secondary: #9013fe;
+$accent: #009aff;
+
+$primary-gradient-start: #1e075f;
+$primary-gradient-end: #9013fe;
+
+$gray: #262626;
+$black: #080606;
+$white: #ffffff;
+$pale-orange: #ffbaaa;
+$orange: #ff6847;
+$alert: #ea0b0b;
+$success: #58d48a;
+
+$font-size-base: 16px;
+
+$grid-breakpoints: (
+  xxs: 0px,
+  xs: 450px,
+  sm: 576px,
+  md: 768px,
+  lg: 992px,
+  xl: 1200px,
+  xxl: 1520px,
+);

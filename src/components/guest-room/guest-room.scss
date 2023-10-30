@@ -1,0 +1,12 @@
+.guest-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+}
+
+.guest-title-opponent-info {
+  cursor: pointer;
+  margin-top: 1rem;
+  font-size: 1.5rem;
+}

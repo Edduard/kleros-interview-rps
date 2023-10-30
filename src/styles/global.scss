@@ -1,0 +1,438 @@
+@import "./variables.scss";
+
+body {
+  margin: 0;
+  font-family: "Open Sans", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  font-style: normal;
+  font-weight: 400;
+  font-size: $font-size-base;
+  background-color: $white;
+  scroll-behavior: smooth;
+
+  text-overflow: ellipsis;
+  word-break: normal;
+}
+
+::-moz-selection {
+  /* Code for Firefox */
+  color: $white;
+  background-color: $secondary;
+}
+
+::selection {
+  color: $white;
+  background-color: $secondary;
+}
+
+body::-webkit-scrollbar {
+  width: 1em;
+}
+a body::-webkit-scrollbar-track {
+  box-shadow: none;
+  color: $white;
+}
+
+body::-webkit-scrollbar-thumb {
+  background: lighten($gray, 10%);
+  border-radius: 0px;
+}
+
+.custom-scrollbar {
+  &::-webkit-scrollbar {
+    width: 0.8em;
+  }
+
+  &::-webkit-scrollbar-track {
+    box-shadow: none;
+    color: $white;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: lighten($gray, 10%);
+    border-radius: 0px;
+  }
+}
+
+a {
+  text-decoration: none !important;
+}
+
+b {
+  font-weight: 900 !important;
+}
+
+.w-100 {
+  width: 100% !important;
+}
+
+.h-100 {
+  height: 100% !important;
+}
+
+img {
+  display: block;
+}
+
+#spinner-root {
+  top: 0px;
+  width: 100vw;
+  left: 0;
+  position: fixed;
+  z-index: 3;
+}
+
+.spinner-backdrop {
+  position: fixed;
+  width: 100%;
+  height: 100vh;
+  top: 0;
+  left: 0;
+  user-select: none;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(3px);
+  z-index: 3;
+}
+
+.spinner-container {
+  color: $white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  position: absolute;
+  margin-top: 50vh;
+  margin-left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 4;
+
+  .spinner {
+    width: 80px;
+    animation: rotate 1.5s infinite ease-in-out;
+    user-select: none;
+  }
+
+  .spinner-description {
+    margin-top: 2rem;
+    font-weight: bold;
+  }
+}
+
+@keyframes rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.tooltip {
+  position: relative;
+}
+
+.tooltip .tooltip-text {
+  visibility: hidden;
+  white-space: nowrap;
+  padding: 0.8em 1em;
+  font-size: 0.8em;
+  background-color: black;
+  color: #fff;
+  text-align: center;
+  border-radius: 8px;
+  transform: translate(-50%, -100%);
+  left: 50%;
+  top: -10px;
+  opacity: 1;
+  position: absolute;
+  z-index: 2;
+  height: fit-content;
+}
+
+.tooltip:hover .tooltip-text {
+  visibility: visible;
+}
+
+.purple-container {
+  background-color: $secondary;
+  padding: 2rem;
+  border-radius: 18px;
+  border: 2px solid lighten($secondary, 25%);
+  gap: 1rem;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0px 0px 50px 0px rgba($secondary, 0.3);
+  min-width: min(360px, 100%);
+  color: $white;
+  transition: opacity 0.5s ease-in-out;
+
+  ::selection {
+    background-color: $white;
+    color: $secondary;
+  }
+}
+
+.blue-container {
+  background-color: $primary;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  border: 2px solid lighten($primary, 25%);
+  gap: 1rem;
+  display: flex;
+  flex-direction: column;
+  width: fit-content;
+  color: $white;
+  transition: opacity 0.5s ease-in-out;
+
+  ::selection {
+    background-color: $white;
+    color: $primary;
+  }
+}
+
+.form-container {
+  gap: 1rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.custom-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.8rem;
+  border-radius: 3px;
+  border: 2px solid lighten($secondary, 25%);
+  transition: border ease-out 0.3s;
+  outline: none;
+
+  &:hover {
+    border: 2px solid lighten($secondary, 8%);
+  }
+  &:focus-visible,
+  &:focus-within,
+  &:active,
+  &:focus {
+    border: 2px solid lighten($primary, 0%);
+  }
+
+  &.input-with-error {
+    border: 2px solid $alert;
+    background-color: lighten($alert, 48%);
+  }
+}
+
+.custom-input-text-error {
+  margin-top: 0.2rem;
+  margin-bottom: 0.4rem;
+  color: $alert;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.text-white {
+  color: $white !important;
+}
+
+.text-primary {
+  color: $primary !important;
+}
+
+.text-secondary {
+  color: $secondary !important;
+}
+
+.invisible {
+  opacity: 0;
+  position: absolute;
+  pointer-events: none;
+  user-select: none;
+}
+
+.visible {
+  opacity: 1;
+  position: relative;
+  pointer-events: auto;
+  user-select: auto;
+}
+
+.invisible-no-interaction {
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+.disabled {
+  user-select: none;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.soft-disabled {
+  user-select: none;
+  pointer-events: none;
+  opacity: 1;
+}
+
+.close-icon {
+  padding: 1rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  cursor: pointer;
+  box-sizing: content-box;
+  background: url("./../assets/icons/close-icon-white.svg");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 1.5rem 1.5rem;
+  transition: all 0.2s ease-out;
+
+  &:hover {
+    background: url("./../assets/icons/close-icon-black.svg");
+    background-size: 1.5rem 1.5rem;
+    background-position: center;
+    background-repeat: no-repeat;
+  }
+
+  // Preload the images
+  &:before {
+    position: absolute;
+    z-index: -1;
+    user-select: none;
+    pointer-events: none;
+    height: 0px;
+    width: 0px;
+    opacity: 0;
+    background-size: 1.5rem 1.5rem;
+    content: url("./../assets/icons/close-icon-white.svg") url("./../assets/icons/close-icon-black.svg");
+  }
+}
+
+@keyframes closeModal {
+  0% {
+    margin-top: 0vh;
+    opacity: 1;
+    display: block;
+  }
+  100% {
+    margin-top: 100vh;
+    opacity: 0;
+    display: none;
+  }
+}
+
+@keyframes openModal {
+  0% {
+    margin-top: 100vh;
+    opacity: 0;
+    display: none;
+  }
+  100% {
+    margin-top: 0vh;
+    opacity: 1;
+    display: block;
+  }
+}
+
+@for $i from 1 through 5 {
+  $size-increment: 0.8rem;
+
+  .gap-#{$i} {
+    gap: calc($size-increment * $i * $i/3) !important;
+  }
+}
+
+@for $i from 0 through 7 {
+  $size-increment: 0.8rem;
+
+  @each $key, $breakpoint in $grid-breakpoints {
+    @media (min-width: $breakpoint) {
+      .m-#{$key}-#{$i} {
+        margin: calc($size-increment * $i * $i/3) !important;
+      }
+      .mt-#{$key}-#{$i} {
+        margin-top: calc($size-increment * $i * $i/3) !important;
+      }
+      .ml-#{$key}-#{$i} {
+        margin-left: calc($size-increment * $i * $i/3) !important;
+      }
+      .mr-#{$key}-#{$i} {
+        margin-right: calc($size-increment * $i * $i/3) !important;
+      }
+      .mb-#{$key}-#{$i} {
+        margin-bottom: calc($size-increment * $i * $i/3) !important;
+      }
+
+      .p-#{$key}-#{$i} {
+        padding: calc($size-increment * $i * $i/3) !important;
+      }
+      .pt-#{$key}-#{$i} {
+        padding-top: calc($size-increment * $i * $i/3) !important;
+      }
+      .pl-#{$key}-#{$i} {
+        padding-left: calc($size-increment * $i * $i/3) !important;
+      }
+      .pr-#{$key}-#{$i} {
+        padding-right: calc($size-increment * $i * $i/3) !important;
+      }
+      .pb-#{$key}-#{$i} {
+        padding-bottom: calc($size-increment * $i * $i/3) !important;
+      }
+    }
+  }
+
+  .m-#{$i} {
+    margin: calc($size-increment * $i * $i/3) !important;
+  }
+  .mt-#{$i} {
+    margin-top: calc($size-increment * $i * $i/3) !important;
+  }
+  .ml-#{$i} {
+    margin-left: calc($size-increment * $i * $i/3) !important;
+  }
+  .mr-#{$i} {
+    margin-right: calc($size-increment * $i * $i/3) !important;
+  }
+  .mb-#{$i} {
+    margin-bottom: calc($size-increment * $i * $i/3) !important;
+  }
+
+  .p-#{$i} {
+    padding: calc($size-increment * $i * $i/3) !important;
+  }
+  .pt-#{$i} {
+    padding-top: calc($size-increment * $i * $i/3) !important;
+  }
+  .pl-#{$i} {
+    padding-left: calc($size-increment * $i * $i/3) !important;
+  }
+  .pr-#{$i} {
+    padding-right: calc($size-increment * $i * $i/3) !important;
+  }
+  .pb-#{$i} {
+    padding-bottom: calc($size-increment * $i * $i/3) !important;
+  }
+}
+
+.d-flex {
+  display: flex;
+  justify-content: inherit;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.flex-direction-column {
+  flex-direction: column;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.actions-container {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
