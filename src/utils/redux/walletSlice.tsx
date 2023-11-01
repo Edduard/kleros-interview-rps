@@ -61,6 +61,7 @@ const persistConfig = {
   key: sliceName,
   storage,
   version: 1,
+  whitelist: [],
 };
 
 export const {resetWalletState, storeAllAccounts, storeCurrentAddress, storeChainId} = walletSlice.actions;

@@ -1,6 +1,6 @@
-import React, {FC, useContext} from "react";
+import {FC} from "react";
 import ReactDOM from "react-dom";
-import {SpinnerContentType, SpinnerContext} from "./spinnerContext";
+import {SpinnerContentType} from "./spinnerContext";
 import spinnerSvg from "./../../assets/kleros-logo-shape.svg";
 
 const Spinner: FC<any> = ({content, rootId}: {content: SpinnerContentType; rootId: string}) => {

@@ -24,7 +24,7 @@ export type GameInfo = {
 
 const useContract = () => {
   const {defineSpinner} = useContext(SpinnerContext);
-  const provider = useProvider();
+  const {provider} = useProvider();
   const dispatch = useDispatch();
   const [isFetching, setIsFetching] = useState(false);
 

@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/static/css/main.e3ea1b1a.css",
-    "main.js": "/static/js/main.209ed043.js",
+    "main.js": "/static/js/main.7aabcffc.js",
     "static/js/787.6df037b2.chunk.js": "/static/js/787.6df037b2.chunk.js",
     "static/media/intro-bg-shape.webp": "/static/media/intro-bg-shape.5bca2cae0a2e88cfb742.webp",
     "static/media/kleros-logo-shape.svg": "/static/media/kleros-logo-shape.1ecf45e0f8cb8a1cfd69f725a816813d.svg",
@@ -9,11 +9,11 @@
     "static/media/close-icon-black.svg": "/static/media/close-icon-black.00e218454ed693964bee.svg",
     "static/media/close-icon-white.svg": "/static/media/close-icon-white.7b2cf68dbe1a7b596d14.svg",
     "main.e3ea1b1a.css.map": "/static/css/main.e3ea1b1a.css.map",
-    "main.209ed043.js.map": "/static/js/main.209ed043.js.map",
+    "main.7aabcffc.js.map": "/static/js/main.7aabcffc.js.map",
     "787.6df037b2.chunk.js.map": "/static/js/787.6df037b2.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.e3ea1b1a.css",
-    "static/js/main.209ed043.js"
+    "static/js/main.7aabcffc.js"
   ]
 }

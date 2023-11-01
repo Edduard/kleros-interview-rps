@@ -45,3 +45,21 @@ export const checkMetamaskAvailability = () => {
 export const explorersByChainId: {[key: string]: string} = {
   "11155111": "https://sepolia.etherscan.io",
 };
+
+export const wait = (ms: number) => {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+};
+
+type TimeoutOptionsType = {ms: number; errorMessage?: string};
+
+export const timeoutPromise = <K, T = void>(func: Promise<T>, options?: TimeoutOptionsType) => {
+  const timeout = options?.ms ?? 3000;
+  const errorMessage = options?.errorMessage ?? `Request timed out after ${timeout}ms`;
+
+  return Promise.race([
+    wait(timeout).then(() => {
+      throw new Error(errorMessage);
+    }),
+    func,
+  ]);
+};

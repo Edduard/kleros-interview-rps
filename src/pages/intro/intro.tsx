@@ -21,6 +21,7 @@ const Intro = () => {
 
   const createRoom = useCallback(async () => {
     try {
+      console.log("createRoom");
       await initWalletConnection();
       navigate("/start-game");
     } catch (err) {
@@ -32,18 +33,18 @@ const Intro = () => {
     async (args?: any) => {
       try {
         console.log("args", args);
-        await initWalletConnection();
+        const wallet = await initWalletConnection();
         const gameInfo = await getContractInfo(args.contractAddress);
         console.log("gameInfo", gameInfo);
-        console.log("walletInfo.currentAddress", walletInfo.currentAddress);
+        console.log("wallet.currentAddress", wallet.currentAddress);
 
         if (
-          gameInfo.guestAddress.toLowerCase() !== walletInfo.currentAddress.toLowerCase() &&
-          gameInfo.hostAddress.toLowerCase() !== walletInfo.currentAddress.toLowerCase()
+          gameInfo.guestAddress.toLowerCase() !== wallet.currentAddress.toLowerCase() &&
+          gameInfo.hostAddress.toLowerCase() !== wallet.currentAddress.toLowerCase()
         ) {
           if (
-            walletInfo.allAccounts.map((a) => a.toLowerCase()).includes(gameInfo.guestAddress.toLowerCase()) ||
-            walletInfo.allAccounts.map((a) => a.toLowerCase()).includes(gameInfo.hostAddress.toLowerCase())
+            wallet.allAccounts.map((a: string) => a.toLowerCase()).includes(gameInfo.guestAddress.toLowerCase()) ||
+            wallet.allAccounts.map((a: string) => a.toLowerCase()).includes(gameInfo.hostAddress.toLowerCase())
           ) {
             return setError("contractAddress", {type: "custom", message: "Please select the right Metamask account!"});
           } else {
@@ -58,12 +59,12 @@ const Intro = () => {
         // if (gameInfo.guestMove === emptyMove.value) {
         // }
         navigate(`/room/${gameInfo.hostAddress}/${args.contractAddress}`);
-      } catch (err) {
+      } catch (err: any) {
         console.error("Err", err);
-        setError("contractAddress", {type: "custom", message: "Invalid contract"});
+        setError("contractAddress", {type: "custom", message: err?.message ?? "Invalid contract"});
       }
     },
-    [getContractInfo, initWalletConnection, navigate, setError, walletInfo.allAccounts, walletInfo.currentAddress]
+    [getContractInfo, initWalletConnection, navigate, setError]
   );
 
   const validateContractAddress = (address: string) => {

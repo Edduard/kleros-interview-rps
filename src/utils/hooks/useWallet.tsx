@@ -1,18 +1,18 @@
-import {useCallback, useContext, useEffect, useState} from "react";
+import {useCallback, useContext, useEffect} from "react";
 import {useDispatch, useSelector} from "react-redux";
 import {RootState} from "../redux/store";
 import {ethers} from "ethers";
 import {storeAllAccounts, storeChainId, storeCurrentAddress} from "../redux/walletSlice";
 import {toast} from "react-toastify";
 import {SpinnerContext} from "../../components/spinner/spinnerContext";
-import {checkMetamaskAvailability} from "../utils";
+import {checkMetamaskAvailability, timeoutPromise} from "../utils";
 import {useProvider} from "./web3ProviderContext";
 import {hideSpinner, showSpinner} from "../redux/spinnerSlice";
 
 const useWallet = () => {
   const {defineSpinner} = useContext(SpinnerContext);
   const dispatch = useDispatch();
-  const provider = useProvider();
+  const {provider, refreshProvider} = useProvider();
 
   const walletInfo = useSelector((state: RootState) => state.wallet);
 
@@ -47,21 +47,39 @@ const useWallet = () => {
   }, []);
 
   const getWalletInfo = useCallback(async () => {
-    const metamaskCurrentChainId = (await provider?.getNetwork())?.chainId;
+    try {
+      console.log("getWalletInfo");
+      console.log("provider", provider);
 
-    const accounts = await provider?.send("eth_requestAccounts", []);
-    console.log("accounts", accounts);
+      // getNetwork() sometimes hangs out if user changed wallets in between dApp usage
+      const net = await timeoutPromise(provider?.getNetwork(), {
+        ms: 3000,
+        errorMessage: "Metamask error. Please try again",
+      });
+      console.log("net", net);
 
-    dispatch(storeAllAccounts(accounts));
-    dispatch(storeChainId(metamaskCurrentChainId || 0));
-    dispatch(storeCurrentAddress(accounts[0]));
+      const metamaskCurrentChainId = net?.chainId;
+      console.log("metamaskCurrentChainId", metamaskCurrentChainId);
 
-    return {
-      provider: provider,
-      address: accounts[0],
-      chainId: metamaskCurrentChainId,
-    };
-  }, [dispatch, provider]);
+      const accounts: string[] = await provider?.send("eth_requestAccounts", []);
+      console.log("accounts", accounts);
+
+      dispatch(storeAllAccounts(accounts));
+      dispatch(storeChainId(metamaskCurrentChainId || 0));
+      dispatch(storeCurrentAddress(accounts[0]));
+
+      return {
+        provider: provider,
+        currentAddress: accounts[0],
+        allAccounts: accounts,
+        chainId: metamaskCurrentChainId,
+      };
+    } catch (error: any) {
+      await refreshProvider();
+      console.warn("error", error);
+      throw error;
+    }
+  }, [dispatch, provider, refreshProvider]);
 
   const initWalletConnection = useCallback(async () => {
     console.log("initWalletConnection");
@@ -69,8 +87,10 @@ const useWallet = () => {
     dispatch(showSpinner());
     try {
       checkMetamaskAvailability();
+      console.log("Metamask available");
       const externalNetworkDetails = await getWalletInfo();
       console.log("externalNetworkDetails", externalNetworkDetails);
+      return externalNetworkDetails;
     } catch (err: any) {
       console.error(err);
       const readableError = err?.message || JSON.stringify(err);
@@ -87,14 +107,14 @@ const useWallet = () => {
     } finally {
       dispatch(hideSpinner());
     }
-  }, [getWalletInfo, defineSpinner]);
+  }, [defineSpinner, dispatch, getWalletInfo]);
 
   useEffect(() => {
     const changeEventHandlers = detectExtensionsChanges();
     return () => {
       removeWeb3ChangeListeners(changeEventHandlers);
     };
-  }, [detectExtensionsChanges, removeWeb3ChangeListeners]);
+  }, [walletInfo, detectExtensionsChanges, removeWeb3ChangeListeners]);
 
   useEffect(() => {
     console.log("Init useWallet");
