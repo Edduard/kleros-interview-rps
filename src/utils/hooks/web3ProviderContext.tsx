@@ -1,8 +1,10 @@
-import React, {FC, createContext, useCallback, useContext, useEffect, useState} from "react";
+import {FC, createContext, useContext, useEffect, useState} from "react";
 import {ethers} from "ethers";
 import {checkMetamaskAvailability} from "../utils";
 import {toast} from "react-toastify";
 import {SpinnerContext} from "../../components/spinner/spinnerContext";
+import {showSpinner} from "../redux/spinnerSlice";
+import {useDispatch} from "react-redux";
 
 const ProviderContext = createContext<ethers.providers.Web3Provider | null>(null);
 
@@ -16,7 +18,8 @@ export const useProvider = () => {
 
 export const Web3ProviderProvider: FC<{children: any}> = ({children}) => {
   const [provider, setProvider] = useState<ethers.providers.Web3Provider | null>(null);
-  const {handleSpinner} = useContext(SpinnerContext);
+  const {defineSpinner} = useContext(SpinnerContext);
+  const dispatch = useDispatch();
 
   useEffect(() => {
     const getProvider = () => {
@@ -27,8 +30,8 @@ export const Web3ProviderProvider: FC<{children: any}> = ({children}) => {
       } catch (err: any) {
         console.error(err);
         const readableError = err?.message || JSON.stringify(err);
-        const showSpinner = handleSpinner(<div className="spinner-description">{readableError}</div>);
-        showSpinner(true);
+        defineSpinner(<div className="spinner-description">{readableError}</div>);
+        dispatch(showSpinner());
 
         toast(`Error: ${readableError}`, {
           position: "bottom-center",
@@ -46,7 +49,7 @@ export const Web3ProviderProvider: FC<{children: any}> = ({children}) => {
 
     const _provider = getProvider();
     setProvider(_provider);
-  }, [handleSpinner]);
+  }, [defineSpinner, dispatch]);
 
   if (provider !== null) return <ProviderContext.Provider value={provider}>{children}</ProviderContext.Provider>;
   else

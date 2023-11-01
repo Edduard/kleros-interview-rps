@@ -1,4 +1,4 @@
-import React, {useCallback, useContext, useEffect, useRef, useState} from "react";
+import React, {useCallback, useEffect, useRef, useState} from "react";
 import "./move-picker.scss";
 import {Move, availableMoves} from "../../utils/constants/constants";
 

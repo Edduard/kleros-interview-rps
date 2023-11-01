@@ -10,6 +10,7 @@ import {Move, emptyMove} from "../constants/constants";
 import RPSContract from "./../contracts/RPS.json";
 import {useProvider} from "./web3ProviderContext";
 import {storeGuestAddress} from "../redux/gameInfoSlice";
+import {hideSpinner, showSpinner} from "../redux/spinnerSlice";
 
 export type GameInfo = {
   hostAddress: string;
@@ -22,7 +23,7 @@ export type GameInfo = {
 };
 
 const useContract = () => {
-  const {handleSpinner} = useContext(SpinnerContext);
+  const {defineSpinner} = useContext(SpinnerContext);
   const provider = useProvider();
   const dispatch = useDispatch();
   const [isFetching, setIsFetching] = useState(false);
@@ -53,16 +54,15 @@ const useContract = () => {
   const getContractInfo = useCallback(
     async (contractAddress: string, silentFetch = false) => {
       console.log("getContractInfo- dispatch:", dispatch);
-      console.log("getContractInfo- handleSpinner:", handleSpinner);
+      console.log("getContractInfo- defineSpinner:", defineSpinner);
       console.log("getContractInfo- provider:", provider);
 
-      let showSpinner: any;
       if (!silentFetch) {
-        showSpinner = handleSpinner(<div className="spinner-description">Getting game info ...</div>);
+        defineSpinner(<div className="spinner-description">Getting game info ...</div>);
       }
       try {
         if (!silentFetch) {
-          showSpinner(true);
+          dispatch(showSpinner());
           setIsFetching(true);
         }
         const contract = new ethers.Contract(contractAddress, RPSContract.abi, provider);
@@ -119,24 +119,23 @@ const useContract = () => {
         throw new Error(error?.message || error || "Error reading contract");
       } finally {
         if (!silentFetch) {
-          showSpinner(false);
+          dispatch(hideSpinner());
           setIsFetching(false);
         }
       }
     },
-    [dispatch, handleSpinner, provider]
+    [dispatch, defineSpinner, provider]
   );
 
   const timeoutContract = useCallback(
     async (contractAddress: string, silentFetch = false) => {
-      let showSpinner: any;
       if (!silentFetch) {
-        showSpinner = handleSpinner(<div className="spinner-description">Returning stake ...</div>);
+        defineSpinner(<div className="spinner-description">Returning stake ...</div>);
       }
 
       try {
         if (!silentFetch) {
-          showSpinner(true);
+          dispatch(showSpinner());
           setIsFetching(true);
         }
         const contract = new ethers.Contract(contractAddress, RPSContract.abi, provider);
@@ -177,24 +176,23 @@ const useContract = () => {
         throw new Error(error?.message || error || "Error reading contract");
       } finally {
         if (!silentFetch) {
-          showSpinner(false);
+          dispatch(hideSpinner());
           setIsFetching(false);
         }
       }
     },
-    [getContractInfo, handleSpinner, provider]
+    [defineSpinner, provider, getContractInfo, dispatch]
   );
 
   const solveGame = useCallback(
     async (contractAddress: string, password?: string, silentFetch = false) => {
-      let showSpinner: any;
       if (!silentFetch) {
-        showSpinner = handleSpinner(<div className="spinner-description">Revealing moves ...</div>);
+        defineSpinner(<div className="spinner-description">Revealing moves ...</div>);
       }
 
       try {
         if (!silentFetch) {
-          showSpinner(true);
+          dispatch(showSpinner());
           setIsFetching(true);
         }
         const verifiedContractAddress = await verifyBytecode(contractAddress);
@@ -220,27 +218,30 @@ const useContract = () => {
         await transaction.wait();
         return transaction;
       } catch (error: any) {
-        console.error("Error reading contract:", error);
+        console.log("Error reading contract:", error);
+        console.log("error?.message reading contract:", error?.message);
+        if (error?.message?.includes("OperationError") || error?.includes("OperationError")) {
+          throw new Error("Invalid password!");
+        }
         throw new Error(error?.message || error || "Error reading contract");
       } finally {
         if (!silentFetch) {
-          showSpinner(false);
+          dispatch(hideSpinner());
           setIsFetching(false);
         }
       }
     },
-    [handleSpinner, provider, verifyBytecode]
+    [defineSpinner, dispatch, provider, verifyBytecode]
   );
 
   const submitGuestMove = useCallback(
     async (move: Move, contractAddress: string, silentFetch = false) => {
-      let showSpinner: any;
       if (!silentFetch) {
-        showSpinner = handleSpinner(<div className="spinner-description">Submitting move ...</div>);
+        defineSpinner(<div className="spinner-description">Submitting move ...</div>);
       }
       try {
         if (!silentFetch) {
-          showSpinner(true);
+          dispatch(showSpinner());
           setIsFetching(true);
         }
         const verifiedContractAddress = await verifyBytecode(contractAddress);
@@ -268,12 +269,12 @@ const useContract = () => {
         throw new Error(error?.message || error || "Error reading contract");
       } finally {
         if (!silentFetch) {
-          showSpinner(false);
+          dispatch(hideSpinner());
           setIsFetching(false);
         }
       }
     },
-    [handleSpinner, provider, verifyBytecode]
+    [defineSpinner, dispatch, provider, verifyBytecode]
   );
 
   const hashMove = useCallback(async (move: Move, salt: string) => {
@@ -337,13 +338,12 @@ const useContract = () => {
 
   const startDeployment = useCallback(
     async (move: Move, amount: string, guestAddress: string, password?: string, silentFetch = false) => {
-      let showSpinner: any;
       if (!silentFetch) {
-        showSpinner = handleSpinner(<div className="spinner-description">Deploying smart contract ...</div>);
+        defineSpinner(<div className="spinner-description">Deploying smart contract ...</div>);
       }
       try {
         if (!silentFetch) {
-          showSpinner(true);
+          dispatch(showSpinner());
           setIsFetching(true);
         }
         console.log("startDeployment - password", password);
@@ -376,12 +376,12 @@ const useContract = () => {
         throw new Error(readableError);
       } finally {
         if (!silentFetch) {
-          showSpinner(false);
+          dispatch(hideSpinner());
           setIsFetching(false);
         }
       }
     },
-    [deployContract, handleSpinner, verifyBytecode]
+    [defineSpinner, deployContract, verifyBytecode, dispatch]
   );
 
   useEffect(() => {

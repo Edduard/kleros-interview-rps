@@ -8,8 +8,19 @@ import {store} from "./utils/redux/store";
 import StartGame from "./pages/start-game/start-game";
 import TimeoutRoom from "./pages/timeout-room/timeout-room";
 import Guarded from "./utils/HOCs/guarded";
+import {useEffect} from "react";
 
 const App = () => {
+  useEffect(() => {
+    const disableConsoleLogs = true;
+    if (disableConsoleLogs) {
+      console.log = () => {};
+      console.error = () => {};
+      console.warn = () => {};
+      console.debug = () => {};
+    }
+  }, []);
+
   return (
     <BrowserRouter>
       <Provider store={store}>

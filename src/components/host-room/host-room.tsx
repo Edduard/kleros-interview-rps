@@ -1,22 +1,21 @@
-import {useCallback, useContext, useEffect, useMemo, useRef, useState} from "react";
+import {useCallback, useContext, useEffect, useRef, useState} from "react";
 import "./host-room.scss";
 import PageTitle from "../page-title/page-title";
-import MovePicker from "../move-picker/move-picker";
 import ActionButton from "../action-button/action-button";
 import {Move, availableMoves, emptyMove, undisclosedMove} from "../../utils/constants/constants";
-import {useForm} from "react-hook-form";
 import useContract, {GameInfo} from "../../utils/hooks/useContract";
 import {ModalContext} from "../modal/modalContext";
 import PasswordModal, {passwordModalTypes} from "../modal/modal-templates/password-modal";
-import {useNavigate, useParams, useSearchParams} from "react-router-dom";
+import {useNavigate} from "react-router-dom";
 import useWallet from "../../utils/hooks/useWallet";
 import {toast} from "react-toastify";
 import {SpinnerContext} from "../spinner/spinnerContext";
-import {useSelector} from "react-redux";
+import {useDispatch, useSelector} from "react-redux";
 import {RootState} from "../../utils/redux/store";
 import MovesOverview from "../moves-overview/moves-overview";
 import Countdown from "../countdown/countdown";
 import {explorersByChainId, safelyOpenExternalUrl} from "../../utils/utils";
+import {hideSpinner, showSpinner} from "../../utils/redux/spinnerSlice";
 
 const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contractAddress: string}) => {
   const {hostMove, guestAddress, hostUsedPassword} = useSelector((state: RootState) => state.gameInfo);
@@ -29,19 +28,32 @@ const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contract
   const [waitingTimeInSeconds, setWaitingTimeInSeconds] = useState<number>();
   const [deadlineTimestamp, setDeadlineTimestamp] = useState<any>();
   const navigate = useNavigate();
-  const {isSpinnerVisible, handleSpinner} = useContext(SpinnerContext);
+  const {isSpinnerVisible, defineSpinner} = useContext(SpinnerContext);
   const interval = useRef<any>();
-  const refreshInterval = 30000;
+  const refreshInterval = 10000;
+  const dispatch = useDispatch();
 
-  const checkGameValidity = useCallback(
+  const checkGameStatus = useCallback(
     (gameInfo: GameInfo) => {
-      console.log("checkGameValidity - gameInfo", gameInfo);
+      console.log("checkGameStatus - gameInfo", gameInfo);
       console.log("gameInfo.guestMove", gameInfo.guestMove);
       console.log("emptyMove.value", emptyMove.value);
 
       if (gameInfo.guestMove !== emptyMove.value) {
+        clearInterval(interval.current);
+        toast(`Opponent submitted its move. Please reveal your move!`, {
+          position: "bottom-center",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: false,
+          draggable: true,
+          type: "warning",
+        });
+
         if (parseFloat(gameInfo.stakeAmount) === 0) {
           // Guest played its move
+          // We only show the move in the state if the game ended (stakes has been collected)
           console.log("gameInfo.guestMove", gameInfo.guestMove);
           console.log("emptyMove.value", emptyMove.value);
           setGuestMove(
@@ -61,22 +73,23 @@ const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contract
         console.log("then", new Date((gameInfo.lastActionAt + gameInfo.timeout) * 1000));
 
         // Deadline already passed. Nothing you can do
+        clearInterval(interval.current);
         navigate(`/timeout/${hostAddress}/${contractAddress}`);
         throw new Error(`Game already ended! You had ${Math.floor(gameInfo.timeout / 60)} minutes to show up.`);
       }
 
       if (gameInfo.hostAddress.toLowerCase() !== walletInfo.currentAddress.toLowerCase()) {
         if (walletInfo.allAccounts.map((a) => a.toLowerCase()).includes(gameInfo.hostAddress.toLowerCase())) {
-          const showSpinner = handleSpinner(
+          defineSpinner(
             <>
               <div className="spinner-description">Please change your address to {gameInfo.hostAddress}</div>
             </>
           );
-          showSpinner(true);
+          dispatch(showSpinner());
 
           throw new Error(`Wrong address selected in Metamask. Please change to ${gameInfo.hostAddress}`);
         } else {
-          const showSpinner = handleSpinner(
+          defineSpinner(
             <div className="d-flex flex-direction-column">
               <div className="spinner-description text-center">{`You are not invited in this room!`}</div>
               <div className="spinner-description text-center">{`If this is your address: ${gameInfo.hostAddress} please switch to it in Metamask.`}</div>
@@ -85,12 +98,13 @@ const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contract
                 className="mt-2"
                 content="Main screen"
                 onClick={() => {
-                  showSpinner(false);
+                  dispatch(hideSpinner());
+                  clearInterval(interval.current);
                   navigate("/");
                 }}></ActionButton>
             </div>
           );
-          showSpinner(true);
+          dispatch(showSpinner());
 
           throw new Error(
             `You are not invited in this room! If this is your address: ${gameInfo.guestAddress} please switch to it in Metamask.`
@@ -99,15 +113,16 @@ const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contract
       }
 
       // Close existing spinner if opened
-      if (isSpinnerVisible) {
-        handleSpinner(false);
+      if (isSpinnerVisible()) {
+        dispatch(hideSpinner());
       }
 
       setWaitingTimeInSeconds(gameInfo.lastActionAt + gameInfo.timeout - Date.now() / 1000);
     },
     [
       contractAddress,
-      handleSpinner,
+      defineSpinner,
+      dispatch,
       hostAddress,
       isSpinnerVisible,
       navigate,
@@ -116,32 +131,35 @@ const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contract
     ]
   );
 
-  const getGameInfo = useCallback(async () => {
-    try {
-      console.log("isFetching", isFetching);
-      if (!isFetching) {
-        const gameInfo = await getContractInfo(contractAddress);
-        setStakedAmount(gameInfo.stakeAmount);
+  const getGameInfo = useCallback(
+    async (silentFetch = false) => {
+      try {
+        console.log("isFetching", isFetching);
+        if (!isFetching) {
+          const gameInfo = await getContractInfo(contractAddress, silentFetch);
+          setStakedAmount(gameInfo.stakeAmount);
 
-        checkGameValidity(gameInfo);
+          checkGameStatus(gameInfo);
 
-        setWaitingTimeInSeconds(gameInfo.lastActionAt + gameInfo.timeout - Date.now() / 1000);
-        setDeadlineTimestamp(gameInfo.lastActionAt + gameInfo.timeout);
+          setWaitingTimeInSeconds(gameInfo.lastActionAt + gameInfo.timeout - Date.now() / 1000);
+          setDeadlineTimestamp(gameInfo.lastActionAt + gameInfo.timeout);
+        }
+      } catch (err: any) {
+        console.error("Err", err);
+        const readableError = err?.message || JSON.stringify(err);
+        toast(`Error: ${readableError}`, {
+          position: "bottom-center",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: false,
+          draggable: true,
+          type: "error",
+        });
       }
-    } catch (err: any) {
-      console.error("Err", err);
-      const readableError = err?.message || JSON.stringify(err);
-      toast(`Error: ${readableError}`, {
-        position: "bottom-center",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: false,
-        draggable: true,
-        type: "error",
-      });
-    }
-  }, [checkGameValidity, contractAddress, getContractInfo, isFetching]);
+    },
+    [checkGameStatus, contractAddress, getContractInfo, isFetching]
+  );
 
   const {handleModal} = useContext<any>(ModalContext);
   const openPasswordModal: () => Promise<string | undefined> = useCallback(() => {
@@ -210,7 +228,7 @@ const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contract
     getGameInfo();
     clearInterval(interval.current);
     interval.current = setInterval(() => {
-      getGameInfo();
+      getGameInfo(true);
     }, refreshInterval);
     return () => clearInterval(interval.current);
     // Important, don't include getGameInfo in dependencies array in order to not trigger unwanted rerenders.
@@ -237,6 +255,7 @@ const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contract
 
   const onCountdownEnd = useCallback(async () => {
     try {
+      clearInterval(interval.current);
       navigate("/timeout/" + hostAddress + "/" + contractAddress);
       console.log("Countdown ended");
     } catch (err) {
@@ -308,6 +327,7 @@ const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contract
                   className="w-100"
                   content="Play again"
                   onClick={() => {
+                    clearInterval(interval.current);
                     navigate("/");
                   }}></ActionButton>
               ) : (

@@ -11,6 +11,8 @@ import {SpinnerContext} from "../spinner/spinnerContext";
 import MovesOverview from "../moves-overview/moves-overview";
 import {explorersByChainId, safelyOpenExternalUrl} from "../../utils/utils";
 import {safelyGetMove} from "../../utils/storageManager";
+import {showSpinner, hideSpinner} from "../../utils/redux/spinnerSlice";
+import {useDispatch} from "react-redux";
 
 const HostTimeoutRoom = ({hostAddress, contractAddress}: {hostAddress: string; contractAddress: string}) => {
   const [guestMove, setGuestMove] = useState<Move>(emptyMove);
@@ -19,16 +21,17 @@ const HostTimeoutRoom = ({hostAddress, contractAddress}: {hostAddress: string; c
   const navigate = useNavigate();
 
   const {isFetching, getContractInfo, timeoutContract} = useContract();
-  const {isSpinnerVisible, handleSpinner} = useContext(SpinnerContext);
+  const {isSpinnerVisible, defineSpinner} = useContext(SpinnerContext);
   const {walletInfo} = useWallet();
+  const dispatch = useDispatch();
 
   useEffect(() => {
     console.log("T contractAddress", contractAddress);
   }, [contractAddress]);
 
-  const checkGameValidity = useCallback(
+  const checkGameStatus = useCallback(
     (gameInfo: GameInfo) => {
-      console.log("checkGameValidity - gameInfo", gameInfo);
+      console.log("checkGameStatus - gameInfo", gameInfo);
       if (parseFloat(gameInfo.stakeAmount) === 0) {
         console.warn("Game ended.Check metamask to see if you won!");
       }
@@ -55,18 +58,18 @@ const HostTimeoutRoom = ({hostAddress, contractAddress}: {hostAddress: string; c
           walletInfo.allAccounts.map((a) => a.toLowerCase()).includes(gameInfo.guestAddress.toLowerCase()) ||
           walletInfo.allAccounts.map((a) => a.toLowerCase()).includes(gameInfo.hostAddress.toLowerCase())
         ) {
-          const showSpinner = handleSpinner(
+          defineSpinner(
             <div className="spinner-description">
               Please change your address to {gameInfo.guestAddress} or {gameInfo.hostAddress}
             </div>
           );
-          showSpinner(true);
+          dispatch(showSpinner());
 
           throw new Error(
             `Wrong address selected in Metamask. Please change to ${gameInfo.guestAddress} or ${gameInfo.hostAddress}`
           );
         } else {
-          const showSpinner = handleSpinner(
+          defineSpinner(
             <div className="d-flex flex-direction-column">
               <div className="spinner-description text-center">{`You are not invited in this room!`}</div>
               <div className="spinner-description text-center">{`If this is your address: ${gameInfo.guestAddress} please switch to it in Metamask.`}</div>
@@ -75,12 +78,12 @@ const HostTimeoutRoom = ({hostAddress, contractAddress}: {hostAddress: string; c
                 className="mt-2"
                 content="Main screen"
                 onClick={() => {
-                  showSpinner(false);
+                  dispatch(hideSpinner());
                   navigate("/");
                 }}></ActionButton>
             </div>
           );
-          showSpinner(true);
+          dispatch(showSpinner());
 
           throw new Error(
             `You are not invited in this room! If this is your address: ${gameInfo.guestAddress} please switch to it in Metamask.`
@@ -89,11 +92,11 @@ const HostTimeoutRoom = ({hostAddress, contractAddress}: {hostAddress: string; c
       }
 
       // Close existing spinner if opened
-      if (isSpinnerVisible) {
-        handleSpinner(false);
+      if (isSpinnerVisible()) {
+        dispatch(hideSpinner());
       }
     },
-    [walletInfo.currentAddress, walletInfo.allAccounts, isSpinnerVisible, handleSpinner, navigate]
+    [walletInfo.currentAddress, walletInfo.allAccounts, isSpinnerVisible, defineSpinner, dispatch, navigate]
   );
 
   const getGameInfo = useCallback(async () => {
@@ -108,7 +111,7 @@ const HostTimeoutRoom = ({hostAddress, contractAddress}: {hostAddress: string; c
             return m.value === parseFloat(move);
           }) || undisclosedMove
         );
-        checkGameValidity(gameInfo);
+        checkGameStatus(gameInfo);
       }
     } catch (err: any) {
       console.error("Err", err);
@@ -123,7 +126,7 @@ const HostTimeoutRoom = ({hostAddress, contractAddress}: {hostAddress: string; c
         type: "error",
       });
     }
-  }, [contractAddress, getContractInfo]);
+  }, [checkGameStatus, contractAddress, getContractInfo, isFetching]);
 
   const triggerTimeout = useCallback(async () => {
     try {
@@ -159,7 +162,7 @@ const HostTimeoutRoom = ({hostAddress, contractAddress}: {hostAddress: string; c
     console.log("contractAddress", contractAddress);
     getGameInfo();
     // Important, don't include getGameInfo in dependencies array in order to not trigger unwanted rerenders.
-  }, [contractAddress, getGameInfo]);
+  }, [contractAddress]);
 
   useEffect(() => {
     console.log("HostTimeoutRoom rerender");

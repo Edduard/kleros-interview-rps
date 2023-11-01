@@ -1,6 +1,5 @@
 import {Move} from "./constants/constants";
-// import {decryptText, defaultEncryptionPassword, encryptText} from "./crypto/encryption";
-import {decryptText, encryptText, defaultEncryptionPassword} from "./crypto/old_encryption_methods/_old_encryption";
+import {decryptText, encryptText, defaultEncryptionPassword} from "./crypto/encryption";
 
 export const DEFAULT_MOVE_PATH = "kleros.rps.selected-move";
 export const DEFAULT_SALT_PATH = "kleros.rps.salt";

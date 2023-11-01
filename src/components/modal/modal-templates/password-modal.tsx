@@ -87,12 +87,18 @@ const PasswordModal: FC<{
                   id="password"
                   type="password"
                   placeholder="Password"
-                  {...register("password", {validate: (value) => value?.length > 8})}
+                  {...register("password", {
+                    validate: {
+                      always: (value) => value?.length >= 8 || "Password must be at least 8 characters long",
+                    },
+                  })}
                   onChange={(e) => {
                     setValue("password", e.target.value, {shouldValidate: true});
                   }}></input>
                 <div className={`${errors?.password ? "custom-input-text-error" : "invisible"}`}>
-                  <div className="">{`Password is required`}</div>
+                  <div className="">{`${
+                    errors?.password?.message ? errors?.password?.message : "Password is required"
+                  }`}</div>
                 </div>
               </label>
 
@@ -103,7 +109,15 @@ const PasswordModal: FC<{
                     id="repeatedPassword"
                     type="password"
                     placeholder="Repeat password"
-                    {...register("repeatedPassword", {validate: (value) => value?.length > 8})}
+                    {...register("repeatedPassword", {
+                      validate: {
+                        always: (value) => {
+                          let errorMessage: string | boolean = true;
+                          if (value?.length < 8) errorMessage = "Password must be at least 8 characters long";
+                          return errorMessage;
+                        },
+                      },
+                    })}
                     onChange={(e) => {
                       setValue("repeatedPassword", e.target.value, {shouldValidate: true});
                     }}></input>

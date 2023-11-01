@@ -10,8 +10,9 @@ import {ModalContext} from "../../components/modal/modalContext";
 import PasswordModal, {passwordModalTypes} from "../../components/modal/modal-templates/password-modal";
 import {useNavigate} from "react-router-dom";
 import useWallet from "../../utils/hooks/useWallet";
-import {useDispatch} from "react-redux";
+import {useDispatch, useSelector} from "react-redux";
 import {storeGuestAddress, storeHostMove, storeHostUsedPassword} from "../../utils/redux/gameInfoSlice";
+import {RootState} from "../../utils/redux/store";
 
 const StartGame = () => {
   const [selectedMove, setSelectedMove] = useState<Move>(emptyMove);
@@ -28,6 +29,7 @@ const StartGame = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
+  const spinnerStore = useSelector((state: RootState) => state.spinner);
   const onSelectMove = useCallback((selectedMove: number) => {
     setSelectedMove(availableMoves.find((move) => move.value === selectedMove) || emptyMove);
   }, []);

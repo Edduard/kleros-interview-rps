@@ -1,26 +1,59 @@
-import React, {FC, SetStateAction} from "react";
-import useSpinner from "./useSpinner";
+import {FC, ReactNode, createContext, useCallback, useState} from "react";
 import Spinner from "./spinner";
+import {defaultSpinnerRoot} from "../../utils/redux/spinnerSlice";
+import {useSelector} from "react-redux";
+import {RootState} from "../../utils/redux/store";
 
-type Dispatch<A> = (value: A) => void;
+export type SpinnerContentType = ReactNode | string;
+export type SpinnersContentsType = {
+  [key: string]: SpinnerContentType;
+};
+export type SpinnerContextType = {
+  defineSpinner: (content: SpinnerContentType, rootId?: string | undefined) => void;
+  isSpinnerVisible: (rootId?: string) => boolean;
+  // spinnersContents: SpinnersContentsType;
+};
 
-const SpinnerContext = React.createContext({
-  spinnerContent: "",
-  handleSpinner: (content: any | undefined, rootId?: string | undefined) => {
-    return "" as unknown as Dispatch<SetStateAction<boolean>>;
-  },
-  isSpinnerVisible: false,
-  spinnerRootId: "spinner-root",
+const defaultSpinnersContents: SpinnersContentsType = {
+  [defaultSpinnerRoot]: "Loading ...",
+};
+
+export const SpinnerContext = createContext<SpinnerContextType>({
+  defineSpinner: (content: SpinnerContentType, rootId?: string | undefined) => {},
+  isSpinnerVisible: (rootId?: string) => false,
+  // spinnersContents: defaultSpinnersContents,
 });
 
-const SpinnerProvider: FC<{children: any}> = ({children}) => {
-  const {isSpinnerVisible, handleSpinner, spinnerContent, spinnerRootId} = useSpinner();
+export const SpinnerProvider: FC<{children: any}> = ({children}) => {
+  const [spinnersContents, setSpinnersContent] = useState<SpinnersContentsType>(defaultSpinnersContents);
+  const spinnerStore = useSelector((state: RootState) => state.spinner);
+
+  const defineSpinner = useCallback(
+    (content: any = false, rootId = defaultSpinnerRoot) => {
+      if (content && content !== spinnersContents) {
+        setSpinnersContent((oldContent: SpinnersContentsType) => {
+          return {...oldContent, [rootId]: content};
+        });
+      }
+    },
+    [spinnersContents]
+  );
+
+  const isSpinnerVisible = useCallback(
+    (rootId = defaultSpinnerRoot) => {
+      return spinnerStore.isSpinnerVisible[rootId];
+    },
+    [spinnerStore.isSpinnerVisible]
+  );
+
   return (
-    <SpinnerContext.Provider value={{isSpinnerVisible, handleSpinner, spinnerContent, spinnerRootId}}>
-      <Spinner />
+    <SpinnerContext.Provider value={{isSpinnerVisible, defineSpinner}}>
+      {Object.keys(spinnersContents).map((key: string) => {
+        if (isSpinnerVisible(key)) {
+          return <Spinner key={"spinner-" + key} content={spinnersContents[key]} rootId={key} />;
+        } else return <div key={"spinner-" + key}></div>;
+      })}
       {children}
     </SpinnerContext.Provider>
   );
 };
-
-export {SpinnerContext, SpinnerProvider};

@@ -7,9 +7,10 @@ import {toast} from "react-toastify";
 import {SpinnerContext} from "../../components/spinner/spinnerContext";
 import {checkMetamaskAvailability} from "../utils";
 import {useProvider} from "./web3ProviderContext";
+import {hideSpinner, showSpinner} from "../redux/spinnerSlice";
 
 const useWallet = () => {
-  const {handleSpinner} = useContext(SpinnerContext);
+  const {defineSpinner} = useContext(SpinnerContext);
   const dispatch = useDispatch();
   const provider = useProvider();
 
@@ -64,8 +65,8 @@ const useWallet = () => {
 
   const initWalletConnection = useCallback(async () => {
     console.log("initWalletConnection");
-    const showSpinner = handleSpinner(<div className="spinner-description">Please connect your Metamask wallet</div>);
-    showSpinner(true);
+    defineSpinner(<div className="spinner-description">Please connect your Metamask wallet</div>);
+    dispatch(showSpinner());
     try {
       checkMetamaskAvailability();
       const externalNetworkDetails = await getWalletInfo();
@@ -84,9 +85,9 @@ const useWallet = () => {
       });
       throw new Error(readableError);
     } finally {
-      showSpinner(false);
+      dispatch(hideSpinner());
     }
-  }, [getWalletInfo, handleSpinner]);
+  }, [getWalletInfo, defineSpinner]);
 
   useEffect(() => {
     const changeEventHandlers = detectExtensionsChanges();

@@ -4,12 +4,14 @@ import PageTitle from "../page-title/page-title";
 import ActionButton from "../action-button/action-button";
 import {Move, availableMoves, emptyMove, undisclosedMove} from "../../utils/constants/constants";
 import useContract, {GameInfo} from "../../utils/hooks/useContract";
-import {useNavigate, useParams} from "react-router-dom";
+import {useNavigate} from "react-router-dom";
 import useWallet from "../../utils/hooks/useWallet";
 import {toast} from "react-toastify";
 import {SpinnerContext} from "../spinner/spinnerContext";
 import MovesOverview from "../moves-overview/moves-overview";
 import {explorersByChainId, safelyOpenExternalUrl} from "../../utils/utils";
+import {showSpinner, hideSpinner} from "../../utils/redux/spinnerSlice";
+import {useDispatch} from "react-redux";
 
 const GuestTimeoutRoom = ({hostAddress, contractAddress}: {hostAddress: string; contractAddress: string}) => {
   const [guestMove, setGuestMove] = useState<Move>(emptyMove);
@@ -17,12 +19,13 @@ const GuestTimeoutRoom = ({hostAddress, contractAddress}: {hostAddress: string; 
   const navigate = useNavigate();
 
   const {getContractInfo, timeoutContract} = useContract();
-  const {isSpinnerVisible, handleSpinner} = useContext(SpinnerContext);
+  const {isSpinnerVisible, defineSpinner} = useContext(SpinnerContext);
   const {walletInfo} = useWallet();
+  const dispatch = useDispatch();
 
-  const checkGameValidity = useCallback(
+  const checkGameStatus = useCallback(
     (gameInfo: GameInfo) => {
-      console.log("checkGameValidity - gameInfo", gameInfo);
+      console.log("checkGameStatus - gameInfo", gameInfo);
 
       if (parseFloat(gameInfo.stakeAmount) === 0) {
         console.warn("Game ended. Check metamask to see if you won!");
@@ -50,18 +53,18 @@ const GuestTimeoutRoom = ({hostAddress, contractAddress}: {hostAddress: string; 
           walletInfo.allAccounts.map((a) => a.toLowerCase()).includes(gameInfo.guestAddress.toLowerCase()) ||
           walletInfo.allAccounts.map((a) => a.toLowerCase()).includes(gameInfo.hostAddress.toLowerCase())
         ) {
-          const showSpinner = handleSpinner(
+          defineSpinner(
             <div className="spinner-description">
               Please change your address to {gameInfo.guestAddress} or {gameInfo.hostAddress}
             </div>
           );
-          showSpinner(true);
+          dispatch(showSpinner());
 
           throw new Error(
             `Wrong address selected in Metamask. Please change to ${gameInfo.guestAddress} or ${gameInfo.hostAddress}`
           );
         } else {
-          const showSpinner = handleSpinner(
+          defineSpinner(
             <div className="d-flex flex-direction-column">
               <div className="spinner-description text-center">{`You are not invited in this room!`}</div>
               <div className="spinner-description text-center">{`If this is your address: ${gameInfo.guestAddress} please switch to it in Metamask.`}</div>
@@ -70,12 +73,12 @@ const GuestTimeoutRoom = ({hostAddress, contractAddress}: {hostAddress: string; 
                 className="mt-2"
                 content="Main screen"
                 onClick={() => {
-                  showSpinner(false);
+                  dispatch(hideSpinner());
                   navigate("/");
                 }}></ActionButton>
             </div>
           );
-          showSpinner(true);
+          dispatch(showSpinner());
 
           throw new Error(
             `You are not invited in this room! If this is your address: ${gameInfo.guestAddress} please switch to it in Metamask.`
@@ -84,11 +87,11 @@ const GuestTimeoutRoom = ({hostAddress, contractAddress}: {hostAddress: string; 
       }
 
       // Close existing spinner if opened
-      if (isSpinnerVisible) {
-        handleSpinner(false);
+      if (isSpinnerVisible()) {
+        dispatch(hideSpinner());
       }
     },
-    [walletInfo.currentAddress, walletInfo.allAccounts, isSpinnerVisible, navigate, handleSpinner]
+    [walletInfo.currentAddress, walletInfo.allAccounts, isSpinnerVisible, navigate, defineSpinner]
   );
 
   const getGameInfo = useCallback(async () => {
@@ -96,7 +99,7 @@ const GuestTimeoutRoom = ({hostAddress, contractAddress}: {hostAddress: string; 
       if (contractAddress) {
         const gameInfo = await getContractInfo(contractAddress);
         setStakedAmount(gameInfo.stakeAmount);
-        checkGameValidity(gameInfo);
+        checkGameStatus(gameInfo);
       }
     } catch (err: any) {
       console.error("Err", err);
@@ -111,7 +114,7 @@ const GuestTimeoutRoom = ({hostAddress, contractAddress}: {hostAddress: string; 
         type: "error",
       });
     }
-  }, [getContractInfo, contractAddress, checkGameValidity]);
+  }, [getContractInfo, contractAddress, checkGameStatus]);
 
   const triggerTimeout = useCallback(async () => {
     try {

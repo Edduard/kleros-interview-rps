@@ -11,6 +11,7 @@ import Header from "../components/header/header";
 const Layout = () => {
   return (
     <div className="main-layout">
+      <div id="spinner-root"></div>
       <SpinnerProvider>
         <ModalProvider>
           <Web3ProviderProvider>
@@ -21,7 +22,6 @@ const Layout = () => {
         </ModalProvider>
       </SpinnerProvider>
       <ToastContainer />
-      <div id="spinner-root"></div>
     </div>
   );
 };

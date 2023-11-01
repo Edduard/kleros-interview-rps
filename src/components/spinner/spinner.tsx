@@ -1,21 +1,22 @@
 import React, {FC, useContext} from "react";
 import ReactDOM from "react-dom";
-import {SpinnerContext} from "./spinnerContext";
+import {SpinnerContentType, SpinnerContext} from "./spinnerContext";
 import spinnerSvg from "./../../assets/kleros-logo-shape.svg";
 
-const Spinner: FC<any> = () => {
-  const context: any = useContext(SpinnerContext);
+const Spinner: FC<any> = ({content, rootId}: {content: SpinnerContentType; rootId: string}) => {
+  const spinnerParent = document.getElementById(rootId);
+  console.log("content, rootId", content, rootId);
 
-  if (context?.isSpinnerVisible) {
+  if (content && spinnerParent !== null) {
     return ReactDOM.createPortal(
       <>
         <div className={`spinner-backdrop`}></div>
         <div className="spinner-container">
           <img alt="" src={spinnerSvg} className="spinner" />
-          <div className="mt-2 text-center">{context?.spinnerContent}</div>
+          <div className="mt-2 text-center">{content}</div>
         </div>
       </>,
-      document.getElementById(context?.spinnerRootId)!
+      spinnerParent
     );
   } else return null;
 };

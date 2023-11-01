@@ -1,9 +1,9 @@
-import React, {useContext} from "react";
+import {useContext} from "react";
 import ReactDOM from "react-dom";
 import {ModalContext} from "./modalContext";
 
 const Modal = () => {
-  let {modalContent, handleModal, modal} = useContext<any>(ModalContext);
+  let {modalContent, modal} = useContext<any>(ModalContext);
   if (modal) {
     return ReactDOM.createPortal(
       <>

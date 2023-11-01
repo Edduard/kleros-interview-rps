@@ -1,4 +1,4 @@
-import React, {useCallback} from "react";
+import {useCallback} from "react";
 import "./intro.scss";
 import ActionButton from "../../components/action-button/action-button";
 import useWallet from "../../utils/hooks/useWallet";
@@ -6,7 +6,6 @@ import {useNavigate} from "react-router-dom";
 import {useForm} from "react-hook-form";
 import useContract from "../../utils/hooks/useContract";
 import {ethers} from "ethers";
-import {emptyMove} from "../../utils/constants/constants";
 
 const Intro = () => {
   const {walletInfo, initWalletConnection} = useWallet();
@@ -17,7 +16,6 @@ const Intro = () => {
     formState: {errors},
     setValue,
     setError,
-    reset,
   } = useForm({mode: "onBlur"});
   const {getContractInfo} = useContract();
 

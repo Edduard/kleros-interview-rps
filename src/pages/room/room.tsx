@@ -1,10 +1,6 @@
-import {useCallback, useContext, useEffect, useMemo, useState} from "react";
+import {useEffect} from "react";
 import "./room.scss";
-import PageTitle from "../../components/page-title/page-title";
-import MovePicker from "../../components/move-picker/move-picker";
-import ActionButton from "../../components/action-button/action-button";
-import {Move, availableMoves, emptyMove} from "../../utils/constants/constants";
-import {useParams, useSearchParams} from "react-router-dom";
+import {useParams} from "react-router-dom";
 import useWallet from "../../utils/hooks/useWallet";
 import HostRoom from "../../components/host-room/host-room";
 import GuestRoom from "../../components/guest-room/guest-room";

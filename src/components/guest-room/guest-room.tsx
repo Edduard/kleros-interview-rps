@@ -12,6 +12,8 @@ import {toast} from "react-toastify";
 import {SpinnerContext} from "../spinner/spinnerContext";
 import MovesOverview from "../moves-overview/moves-overview";
 import {explorersByChainId, safelyOpenExternalUrl} from "../../utils/utils";
+import {hideSpinner, showSpinner} from "../../utils/redux/spinnerSlice";
+import {useDispatch} from "react-redux";
 
 const GuestRoom = ({hostAddress, contractAddress}: {hostAddress: string; contractAddress: string}) => {
   const [selectedMove, setSelectedMove] = useState<Move>(emptyMove);
@@ -22,11 +24,12 @@ const GuestRoom = ({hostAddress, contractAddress}: {hostAddress: string; contrac
   const [gameTimeout, setGameTimeout] = useState<number>(0);
   const navigate = useNavigate();
   const interval = useRef<any>();
-  const refreshInterval = 30000;
+  const refreshInterval = 10000;
 
   const {getContractInfo, submitGuestMove} = useContract();
-  const {isSpinnerVisible, handleSpinner} = useContext(SpinnerContext);
+  const {isSpinnerVisible, defineSpinner} = useContext(SpinnerContext);
   const {walletInfo} = useWallet();
+  const dispatch = useDispatch();
 
   const onSelectMove = useCallback((selectedMove: number) => {
     setSelectedMove(availableMoves.find((move) => move.value === selectedMove) || emptyMove);
@@ -34,6 +37,7 @@ const GuestRoom = ({hostAddress, contractAddress}: {hostAddress: string; contrac
 
   const onCountdownEnd = useCallback(async () => {
     try {
+      clearInterval(interval.current);
       navigate("/timeout/" + hostAddress + "/" + contractAddress);
       console.log("Countdown ended");
     } catch (err) {
@@ -61,10 +65,11 @@ const GuestRoom = ({hostAddress, contractAddress}: {hostAddress: string; contrac
     [contractAddress, deadlineTimestamp, gameTimeout, selectedMove, submitGuestMove]
   );
 
-  const checkGameValidity = useCallback(
+  const checkGameStatus = useCallback(
     (gameInfo: GameInfo) => {
-      console.log("checkGameValidity - gameInfo", gameInfo);
+      console.log("checkGameStatus - gameInfo", gameInfo);
       if (parseFloat(gameInfo.stakeAmount) === 0) {
+        clearInterval(interval.current);
         toast(`Game ended. Check metamask to see if you won!`, {
           position: "bottom-center",
           autoClose: 5000,
@@ -86,20 +91,21 @@ const GuestRoom = ({hostAddress, contractAddress}: {hostAddress: string; contrac
       }
 
       if (gameInfo.lastActionAt + gameInfo.timeout < Date.now() / 1000) {
+        clearInterval(interval.current);
         navigate(`/timeout/${hostAddress}/${contractAddress}`);
         throw new Error(`Game already ended! You had ${Math.floor(gameInfo.timeout / 60)} minutes to show up.`);
       }
 
       if (gameInfo.guestAddress.toLowerCase() !== walletInfo.currentAddress.toLowerCase()) {
         if (walletInfo.allAccounts.map((a) => a.toLowerCase()).includes(gameInfo.guestAddress.toLowerCase())) {
-          const showSpinner = handleSpinner(
+          defineSpinner(
             <div className="spinner-description">Please change your address to {gameInfo.guestAddress}</div>
           );
-          showSpinner(true);
+          dispatch(showSpinner());
 
           throw new Error(`Wrong address selected in Metamask. Please change to ${gameInfo.guestAddress}`);
         } else {
-          const showSpinner = handleSpinner(
+          defineSpinner(
             <div className="d-flex flex-direction-column">
               <div className="spinner-description text-center">{`You are not invited in this room!`}</div>
               <div className="spinner-description text-center">{`If this is your address: ${gameInfo.guestAddress} please switch to it in Metamask.`}</div>
@@ -108,12 +114,13 @@ const GuestRoom = ({hostAddress, contractAddress}: {hostAddress: string; contrac
                 className="mt-2"
                 content="Main screen"
                 onClick={() => {
-                  showSpinner(false);
+                  dispatch(hideSpinner());
+                  clearInterval(interval.current);
                   navigate("/");
                 }}></ActionButton>
             </div>
           );
-          showSpinner(true);
+          dispatch(showSpinner());
 
           throw new Error(
             `You are not invited in this room! If this is your address: ${gameInfo.guestAddress} please switch to it in Metamask.`
@@ -122,8 +129,8 @@ const GuestRoom = ({hostAddress, contractAddress}: {hostAddress: string; contrac
       }
 
       // Close existing spinner if opened
-      if (isSpinnerVisible) {
-        handleSpinner(false);
+      if (isSpinnerVisible()) {
+        dispatch(hideSpinner());
       }
 
       setWaitingTimeInSeconds(gameInfo.lastActionAt + gameInfo.timeout - Date.now() / 1000);
@@ -135,7 +142,8 @@ const GuestRoom = ({hostAddress, contractAddress}: {hostAddress: string; contrac
       navigate,
       hostAddress,
       contractAddress,
-      handleSpinner,
+      defineSpinner,
+      dispatch,
     ]
   );
 
@@ -158,45 +166,49 @@ const GuestRoom = ({hostAddress, contractAddress}: {hostAddress: string; contrac
     }
   }, [contractAddress, hostAddress]);
 
-  const getGameInfo = useCallback(async () => {
-    try {
-      const gameInfo = await getContractInfo(contractAddress);
-      setStakedAmount(gameInfo.stakeAmount);
-      checkGameValidity(gameInfo);
-      setWaitingTimeInSeconds(gameInfo.lastActionAt + gameInfo.timeout - Date.now() / 1000);
-      setDeadlineTimestamp(gameInfo.lastActionAt + gameInfo.timeout);
-      setGameTimeout(gameInfo.timeout);
-    } catch (err: any) {
-      console.error("Err", err);
-      const readableError = err?.message || JSON.stringify(err);
-      toast(`Error: ${readableError}`, {
-        position: "bottom-center",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: false,
-        draggable: true,
-        type: "error",
-      });
-    }
-  }, [checkGameValidity, contractAddress, getContractInfo]);
+  const getGameInfo = useCallback(
+    async (silentFetch = false) => {
+      try {
+        const gameInfo = await getContractInfo(contractAddress, silentFetch);
+        setStakedAmount(gameInfo.stakeAmount);
+        checkGameStatus(gameInfo);
+        setWaitingTimeInSeconds(gameInfo.lastActionAt + gameInfo.timeout - Date.now() / 1000);
+        setDeadlineTimestamp(gameInfo.lastActionAt + gameInfo.timeout);
+        setGameTimeout(gameInfo.timeout);
+      } catch (err: any) {
+        console.error("Err", err);
+        const readableError = err?.message || JSON.stringify(err);
+        toast(`Error: ${readableError}`, {
+          position: "bottom-center",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: false,
+          draggable: true,
+          type: "error",
+        });
+      }
+    },
+    [checkGameStatus, contractAddress, getContractInfo]
+  );
 
-  useEffect(() => {
-    console.log("hostAddress", hostAddress);
-    console.log("contractAddress", contractAddress);
+  // useEffect(() => {
+  //   console.log("hostAddress", hostAddress);
+  //   console.log("contractAddress", contractAddress);
 
-    getGameInfo();
-    // Important, don't include getGameInfo in dependencies array in order to not trigger unwanted rerenders.
-  }, [hostAddress, contractAddress]);
+  //   getGameInfo();
+  //   // Important, don't include getGameInfo in dependencies array in order to not trigger unwanted rerenders.
+  // }, [hostAddress, contractAddress]);
 
   useEffect(() => {
     getGameInfo();
     clearInterval(interval.current);
     interval.current = setInterval(() => {
-      getGameInfo();
+      getGameInfo(true);
     }, refreshInterval);
     return () => clearInterval(interval.current);
-  }, [hostAddress, contractAddress, walletInfo, getGameInfo]);
+    // Important, don't include getGameInfo in dependencies array in order to not trigger unwanted rerenders.
+  }, [hostAddress, contractAddress, walletInfo]);
 
   useEffect(() => {
     console.log("GuestRoom rerender");
