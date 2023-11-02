@@ -6,10 +6,10 @@ import {toast} from "react-toastify";
 import {SpinnerContext} from "../../components/spinner/spinnerContext";
 import {generateSalt} from "../utils";
 import {safelyGetMove, safelyGetSalt, safelyStoreMove, safelyStoreSalt} from "../storageManager";
-import {Move, emptyMove} from "../constants/constants";
+import {Move, availableMoves, emptyMove} from "../constants/constants";
 import RPSContract from "./../contracts/RPS.json";
 import {useProvider} from "./web3ProviderContext";
-import {storeGuestAddress} from "../redux/gameInfoSlice";
+import {storeGuestAddress, storeHostMove} from "../redux/gameInfoSlice";
 import {hideSpinner, showSpinner} from "../redux/spinnerSlice";
 
 export type GameInfo = {
@@ -27,8 +27,6 @@ const useContract = () => {
   const {provider} = useProvider();
   const dispatch = useDispatch();
   const [isFetching, setIsFetching] = useState(false);
-
-  const walletInfo = useSelector((state: RootState) => state.wallet);
 
   const verifyBytecode = useCallback(
     async (_contractAddress: string) => {
@@ -206,7 +204,16 @@ const useContract = () => {
         const signedContract = contract.connect(signer);
 
         const move = await safelyGetMove(password);
-        const salt = await safelyGetSalt(password);
+
+        if (move?.length) {
+          const hostMove = availableMoves.find((m: Move) => {
+            return m.value === parseInt(move);
+          });
+          if (hostMove) {
+            dispatch(storeHostMove(hostMove));
+          }
+        }
+        const salt = (await safelyGetSalt(password)) || "";
         console.log("move", move);
         console.log("salt", salt);
 
@@ -220,7 +227,7 @@ const useContract = () => {
       } catch (error: any) {
         console.log("Error reading contract:", error);
         console.log("error?.message reading contract:", error?.message);
-        if (error?.message?.includes("OperationError") || error?.includes("OperationError")) {
+        if (error?.message?.includes("OperationError")) {
           throw new Error("Invalid password!");
         }
         throw new Error(error?.message || error || "Error reading contract");
@@ -314,20 +321,12 @@ const useContract = () => {
 
         console.log("hashedMove, userAddress, deploymentOverrides", hashedMove, guestAddress, deploymentOverrides);
 
-        //
-        // ToDo: Uncomment this
-        //
         const contract = await factory.deploy(hashedMove, guestAddress, deploymentOverrides);
         console.log("contract", contract);
         await contract.deployed();
         console.log("contract.deployed", contract);
 
         return contract.address;
-
-        //
-        // ToDo: Delete this
-        //
-        // return "0x31Fdef30566a76D25E03Efa39A466ac5B6DA39Ea";
       } catch (error: any) {
         console.error("Error deploying contract:", error);
         throw new Error(error?.message || error || "Error deploying contract");

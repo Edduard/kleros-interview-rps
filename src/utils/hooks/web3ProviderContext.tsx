@@ -1,4 +1,4 @@
-import {FC, createContext, useCallback, useContext, useEffect, useState} from "react";
+import {FC, createContext, useCallback, useContext, useEffect, useRef, useState} from "react";
 import {ethers} from "ethers";
 import {checkMetamaskAvailability} from "../utils";
 import {toast} from "react-toastify";
@@ -25,13 +25,18 @@ export const Web3ProviderProvider: FC<{children: any}> = ({children}) => {
   const [provider, setProvider] = useState<ethers.providers.Web3Provider | null>(null);
   const {defineSpinner} = useContext(SpinnerContext);
   const dispatch = useDispatch();
+  const isGettingProvider = useRef(false);
 
   const getProvider = useCallback(() => {
     try {
-      console.log("Web3ProviderProvider", Web3ProviderProvider);
-      checkMetamaskAvailability();
-      const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
-      return web3Provider;
+      console.log("isGettingProvider?.current", isGettingProvider?.current);
+      if (!isGettingProvider?.current) {
+        isGettingProvider.current = true;
+        console.log("Web3ProviderProvider", Web3ProviderProvider);
+        checkMetamaskAvailability();
+        const web3Provider = new ethers.providers.Web3Provider(window.ethereum);
+        return web3Provider;
+      } else return null;
     } catch (err: any) {
       console.error(err);
       const readableError = err?.message || JSON.stringify(err);
@@ -49,12 +54,16 @@ export const Web3ProviderProvider: FC<{children: any}> = ({children}) => {
       });
 
       return null;
+    } finally {
+      isGettingProvider.current = false;
     }
   }, [defineSpinner, dispatch]);
 
-  const refreshProvider = useCallback(() => {
+  const refreshProvider = useCallback(async () => {
     const _provider = getProvider();
-    setProvider(_provider);
+    if (_provider) {
+      setProvider(_provider);
+    }
   }, [getProvider]);
 
   useEffect(() => {
@@ -69,4 +78,9 @@ export const Web3ProviderProvider: FC<{children: any}> = ({children}) => {
         <div style={{height: "80vh"}}></div>
       </>
     );
+  // return (
+  //   <>
+  //     <div style={{height: "80vh"}}></div>
+  //   </>
+  // );
 };

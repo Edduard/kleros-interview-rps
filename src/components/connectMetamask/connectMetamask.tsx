@@ -1,23 +1,24 @@
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import useWallet from "../../utils/hooks/useWallet";
 
 const ConnectMetamask = () => {
   const {walletInfo, initWalletConnection} = useWallet();
-  const [isConnecting, setIsConnecting] = useState(false);
+  const isConnecting = useRef(false);
 
   useEffect(() => {
     console.log("ConnectMetamask");
-    console.log("isConnecting", isConnecting);
+    console.log("isConnecting", isConnecting?.current);
     console.log("walletInfo", walletInfo);
-    if (!isConnecting && !walletInfo.allAccounts?.length) {
+    if (!isConnecting?.current) {
       const fetchData = async () => {
         try {
-          console.log("initing");
-          setIsConnecting(true);
+          console.log("initializing");
+          isConnecting.current = true;
           await initWalletConnection();
-          setIsConnecting(false);
         } catch (err) {
           console.log("Err:", err);
+        } finally {
+          isConnecting.current = false;
         }
       };
 
@@ -27,7 +28,9 @@ const ConnectMetamask = () => {
 
   return (
     <>
-      <div style={{height: "80vh"}}></div>
+      <div style={{height: "80vh"}}>
+        {/* <Spinner content={"Connecting your metamask"} rootId={"spinner-root"} /> */}
+      </div>
     </>
   );
 };

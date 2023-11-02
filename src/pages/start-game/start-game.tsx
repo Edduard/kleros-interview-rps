@@ -29,7 +29,6 @@ const StartGame = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const spinnerStore = useSelector((state: RootState) => state.spinner);
   const onSelectMove = useCallback((selectedMove: number) => {
     setSelectedMove(availableMoves.find((move) => move.value === selectedMove) || emptyMove);
   }, []);
@@ -90,26 +89,14 @@ const StartGame = () => {
       dispatch(storeHostUsedPassword(!!password?.length));
 
       const deployedContractAddress = await startDeployment(selectedMove, stakedAmount, guestAddress, password);
-      // ToDo: put this back
       await getContractInfo(deployedContractAddress);
       console.log("selectedMove", selectedMove);
+      console.log("walletInfo?.currentAddress", walletInfo?.currentAddress);
 
       dispatch(storeHostMove(selectedMove));
       dispatch(storeGuestAddress(guestAddress));
 
-      // ToDo: Delete this
-      // Opponent address: 0x31Fdef30566a76D25E03Efa39A466ac5B6DA39Ea
-      // Stake: 0.0001
-
-      // revealMove - password 123456789
-      // decryptedMove 1
-      // decryptedSalt 275d4a05b6298b06e789b9c6cc15059a
-      // deployedContractAddress 0xfDA73b2c394e19cB5cfA842bA7DA5FBA57d63140
-      // await getContractInfo("0xfDA73b2c394e19cB5cfA842bA7DA5FBA57d63140");
-
       navigate("/room/" + walletInfo.currentAddress + "/" + deployedContractAddress);
-
-      // await contract.revealMove(password);
     } catch (err) {
       console.error("Err", err);
     }

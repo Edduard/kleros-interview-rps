@@ -1,9 +1,9 @@
 import {combineReducers, configureStore} from "@reduxjs/toolkit";
-import walletReducer, {WalletState} from "./walletSlice";
+import walletReducer, {WalletState, resetWalletState} from "./walletSlice";
 import storage from "redux-persist/lib/storage";
 import {FLUSH, PAUSE, PERSIST, PURGE, REGISTER, REHYDRATE, persistReducer, persistStore} from "redux-persist";
-import gameInfoReducer, {GameInfoState} from "./gameInfoSlice";
-import spinnerReducer, {SpinnerState} from "./spinnerSlice";
+import gameInfoReducer, {GameInfoState, resetGameInfoState} from "./gameInfoSlice";
+import spinnerReducer, {SpinnerState, resetSpinnerState} from "./spinnerSlice";
 
 export interface RootState {
   wallet: WalletState;
@@ -35,3 +35,13 @@ export const store = configureStore({
 });
 
 export const persistor = persistStore(store);
+
+export const resetAllStores = () => {
+  return (dispatch: any) => {
+    dispatch(resetWalletState());
+    dispatch(resetGameInfoState());
+    dispatch(resetSpinnerState());
+  };
+};
+
+export type StoreDispatch = typeof store.dispatch;

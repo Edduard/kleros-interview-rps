@@ -13,7 +13,8 @@ const Room = () => {
   useEffect(() => {
     console.log("R hostAddress", hostAddress);
     console.log("R contractAddress", contractAddress);
-  }, [hostAddress, contractAddress]);
+    console.log("Room wallet info", walletInfo);
+  }, [hostAddress, contractAddress, walletInfo]);
   return (
     <>
       {contractAddress && hostAddress ? (

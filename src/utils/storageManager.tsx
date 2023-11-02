@@ -20,17 +20,29 @@ export const safelyStoreMove = async (move: Move, password?: string) => {
 };
 
 export const safelyGetSalt = async (password?: string) => {
-  const encryptionPassword = password || defaultEncryptionPassword;
-  const encryptedSalt = localStorage.getItem(DEFAULT_SALT_PATH) || "";
+  try {
+    const encryptionPassword = password || defaultEncryptionPassword;
+    const encryptedSalt = localStorage.getItem(DEFAULT_SALT_PATH) || "";
 
-  const decryptedSalt = await decryptText(encryptedSalt, encryptionPassword);
-  return decryptedSalt;
+    const decryptedSalt = await decryptText(encryptedSalt, encryptionPassword);
+    return decryptedSalt;
+  } catch (error: any) {
+    if (error?.message?.includes("OperationError") || error?.includes("OperationError")) {
+      throw new Error("Invalid salt password !");
+    }
+  }
 };
 
 export const safelyGetMove = async (password?: string) => {
-  const encryptionPassword = password || defaultEncryptionPassword;
-  const encryptedMove = localStorage.getItem(DEFAULT_MOVE_PATH) || "";
+  try {
+    const encryptionPassword = password || defaultEncryptionPassword;
+    const encryptedMove = localStorage.getItem(DEFAULT_MOVE_PATH) || "";
 
-  const decryptedMove = await decryptText(encryptedMove, encryptionPassword);
-  return decryptedMove;
+    const decryptedMove = await decryptText(encryptedMove, encryptionPassword);
+    return decryptedMove;
+  } catch (error: any) {
+    if (error?.message?.includes("OperationError") || error?.includes("OperationError")) {
+      throw new Error("Invalid password!");
+    }
+  }
 };

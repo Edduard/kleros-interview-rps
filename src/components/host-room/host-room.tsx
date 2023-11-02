@@ -23,19 +23,21 @@ const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contract
   const [guestMove, setGuestMove] = useState<Move>(emptyMove);
 
   const [stakedAmount, setStakedAmount] = useState<string>("");
-  const {isFetching, getContractInfo, solveGame, timeoutContract} = useContract();
+  const {isFetching, getContractInfo, solveGame} = useContract();
   const {walletInfo} = useWallet();
   const [waitingTimeInSeconds, setWaitingTimeInSeconds] = useState<number>();
   const [deadlineTimestamp, setDeadlineTimestamp] = useState<any>();
   const navigate = useNavigate();
   const {isSpinnerVisible, defineSpinner} = useContext(SpinnerContext);
   const interval = useRef<any>();
-  const refreshInterval = 10000;
+  const refreshInterval = 15000;
   const dispatch = useDispatch();
 
   const checkGameStatus = useCallback(
     (gameInfo: GameInfo) => {
       console.log("checkGameStatus - gameInfo", gameInfo);
+      console.log("checkGameStatus - walletInfo.allAccounts", walletInfo.allAccounts);
+      console.log("checkGameStatus - walletInfo.currentAddress", walletInfo.currentAddress);
       console.log("gameInfo.guestMove", gameInfo.guestMove);
       console.log("emptyMove.value", emptyMove.value);
 
@@ -90,9 +92,12 @@ const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contract
           throw new Error(`Wrong address selected in Metamask. Please change to ${gameInfo.hostAddress}`);
         } else {
           defineSpinner(
-            <div className="d-flex flex-direction-column">
-              <div className="spinner-description text-center">{`You are not invited in this room!`}</div>
-              <div className="spinner-description text-center">{`If this is your address: ${gameInfo.hostAddress} please switch to it in Metamask.`}</div>
+            <div className="d-flex flex-direction-column spinner-description">
+              <div className="text-center">{`You are not invited in this room!`}</div>
+              <div className="text-center mt-2">{`If one of these is your address: `}</div>
+              <div className="text-center">{`${gameInfo.guestAddress}`}</div>
+              <div className="text-center">{`${gameInfo.hostAddress}`}</div>
+              <div className="text-center">{`Please switch to it in Metamask.`}</div>
               <div className="mt-2">Or play a new game</div>
               <ActionButton
                 className="mt-2"
@@ -107,7 +112,7 @@ const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contract
           dispatch(showSpinner());
 
           throw new Error(
-            `You are not invited in this room! If this is your address: ${gameInfo.guestAddress} please switch to it in Metamask.`
+            `You are not invited in this room! If one of these is your address: ${gameInfo.guestAddress} or ${gameInfo.hostAddress} please switch to it in Metamask.`
           );
         }
       }
@@ -135,7 +140,7 @@ const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contract
     async (silentFetch = false) => {
       try {
         console.log("isFetching", isFetching);
-        if (!isFetching) {
+        if (!isFetching || silentFetch) {
           const gameInfo = await getContractInfo(contractAddress, silentFetch);
           setStakedAmount(gameInfo.stakeAmount);
 
@@ -189,6 +194,7 @@ const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contract
 
       const solvedGame = await solveGame(contractAddress, password);
       console.log("solvedGame", solvedGame);
+      clearInterval(interval.current);
       const gameInfo = await getContractInfo(contractAddress);
       console.log("gameInfo", gameInfo);
 

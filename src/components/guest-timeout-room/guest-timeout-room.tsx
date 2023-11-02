@@ -26,6 +26,8 @@ const GuestTimeoutRoom = ({hostAddress, contractAddress}: {hostAddress: string; 
   const checkGameStatus = useCallback(
     (gameInfo: GameInfo) => {
       console.log("checkGameStatus - gameInfo", gameInfo);
+      console.log("checkGameStatus - walletInfo.allAccounts", walletInfo.allAccounts);
+      console.log("checkGameStatus - walletInfo.currentAddress", walletInfo.currentAddress);
 
       if (parseFloat(gameInfo.stakeAmount) === 0) {
         console.warn("Game ended. Check metamask to see if you won!");
@@ -44,6 +46,12 @@ const GuestTimeoutRoom = ({hostAddress, contractAddress}: {hostAddress: string; 
         // navigate(`/room/${contractAddress}`);
         throw new Error(`Game still on! You have ${Math.floor(gameInfo.timeout / 60)} minutes to play.`);
       }
+
+      if (gameInfo.hostAddress.toLowerCase() === walletInfo.currentAddress.toLowerCase()) {
+        // Because of weird metamask account switches we are on the guest page instead of host
+        navigate(0);
+      }
+
       console.log("walletInfo.currentAddress", walletInfo.currentAddress);
       if (
         gameInfo.guestAddress.toLowerCase() !== walletInfo.currentAddress.toLowerCase() &&
@@ -65,9 +73,12 @@ const GuestTimeoutRoom = ({hostAddress, contractAddress}: {hostAddress: string; 
           );
         } else {
           defineSpinner(
-            <div className="d-flex flex-direction-column">
-              <div className="spinner-description text-center">{`You are not invited in this room!`}</div>
-              <div className="spinner-description text-center">{`If this is your address: ${gameInfo.guestAddress} please switch to it in Metamask.`}</div>
+            <div className="d-flex flex-direction-column spinner-description">
+              <div className="text-center">{`You are not invited in this room!`}</div>
+              <div className="text-center mt-2">{`If one of these is your address: `}</div>
+              <div className="text-center">{`${gameInfo.guestAddress}`}</div>
+              <div className="text-center">{`${gameInfo.hostAddress}`}</div>
+              <div className="text-center">{`Please switch to it in Metamask.`}</div>
               <div className="mt-2">Or play a new game</div>
               <ActionButton
                 className="mt-2"
@@ -81,7 +92,7 @@ const GuestTimeoutRoom = ({hostAddress, contractAddress}: {hostAddress: string; 
           dispatch(showSpinner());
 
           throw new Error(
-            `You are not invited in this room! If this is your address: ${gameInfo.guestAddress} please switch to it in Metamask.`
+            `You are not invited in this room! If one of these is your address: ${gameInfo.guestAddress} or ${gameInfo.hostAddress} please switch to it in Metamask.`
           );
         }
       }
@@ -91,7 +102,7 @@ const GuestTimeoutRoom = ({hostAddress, contractAddress}: {hostAddress: string; 
         dispatch(hideSpinner());
       }
     },
-    [walletInfo.currentAddress, walletInfo.allAccounts, isSpinnerVisible, navigate, defineSpinner]
+    [walletInfo.currentAddress, walletInfo.allAccounts, isSpinnerVisible, defineSpinner, dispatch, navigate]
   );
 
   const getGameInfo = useCallback(async () => {

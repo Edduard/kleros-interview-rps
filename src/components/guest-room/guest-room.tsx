@@ -24,9 +24,9 @@ const GuestRoom = ({hostAddress, contractAddress}: {hostAddress: string; contrac
   const [gameTimeout, setGameTimeout] = useState<number>(0);
   const navigate = useNavigate();
   const interval = useRef<any>();
-  const refreshInterval = 10000;
+  const refreshInterval = 15000;
 
-  const {getContractInfo, submitGuestMove} = useContract();
+  const {isFetching, getContractInfo, submitGuestMove} = useContract();
   const {isSpinnerVisible, defineSpinner} = useContext(SpinnerContext);
   const {walletInfo} = useWallet();
   const dispatch = useDispatch();
@@ -68,6 +68,8 @@ const GuestRoom = ({hostAddress, contractAddress}: {hostAddress: string; contrac
   const checkGameStatus = useCallback(
     (gameInfo: GameInfo) => {
       console.log("checkGameStatus - gameInfo", gameInfo);
+      console.log("checkGameStatus - walletInfo.allAccounts", walletInfo.allAccounts);
+      console.log("checkGameStatus - walletInfo.currentAddress", walletInfo.currentAddress);
       if (parseFloat(gameInfo.stakeAmount) === 0) {
         clearInterval(interval.current);
         toast(`Game ended. Check metamask to see if you won!`, {
@@ -96,6 +98,11 @@ const GuestRoom = ({hostAddress, contractAddress}: {hostAddress: string; contrac
         throw new Error(`Game already ended! You had ${Math.floor(gameInfo.timeout / 60)} minutes to show up.`);
       }
 
+      if (gameInfo.hostAddress.toLowerCase() === walletInfo.currentAddress.toLowerCase()) {
+        // Because of weird metamask account switches we are on the guest page instead of host
+        navigate(0);
+      }
+
       if (gameInfo.guestAddress.toLowerCase() !== walletInfo.currentAddress.toLowerCase()) {
         if (walletInfo.allAccounts.map((a) => a.toLowerCase()).includes(gameInfo.guestAddress.toLowerCase())) {
           defineSpinner(
@@ -106,9 +113,12 @@ const GuestRoom = ({hostAddress, contractAddress}: {hostAddress: string; contrac
           throw new Error(`Wrong address selected in Metamask. Please change to ${gameInfo.guestAddress}`);
         } else {
           defineSpinner(
-            <div className="d-flex flex-direction-column">
-              <div className="spinner-description text-center">{`You are not invited in this room!`}</div>
-              <div className="spinner-description text-center">{`If this is your address: ${gameInfo.guestAddress} please switch to it in Metamask.`}</div>
+            <div className="d-flex flex-direction-column spinner-description">
+              <div className="text-center">{`You are not invited in this room!`}</div>
+              <div className="text-center mt-2">{`If one of these is your address: `}</div>
+              <div className="text-center">{`${gameInfo.guestAddress}`}</div>
+              <div className="text-center">{`${gameInfo.hostAddress}`}</div>
+              <div className="text-center">{`Please switch to it in Metamask.`}</div>
               <div className="mt-2">Or play a new game</div>
               <ActionButton
                 className="mt-2"
@@ -123,7 +133,7 @@ const GuestRoom = ({hostAddress, contractAddress}: {hostAddress: string; contrac
           dispatch(showSpinner());
 
           throw new Error(
-            `You are not invited in this room! If this is your address: ${gameInfo.guestAddress} please switch to it in Metamask.`
+            `You are not invited in this room! If one of these is your address: ${gameInfo.guestAddress} or ${gameInfo.hostAddress} please switch to it in Metamask.`
           );
         }
       }
@@ -136,8 +146,8 @@ const GuestRoom = ({hostAddress, contractAddress}: {hostAddress: string; contrac
       setWaitingTimeInSeconds(gameInfo.lastActionAt + gameInfo.timeout - Date.now() / 1000);
     },
     [
-      walletInfo.currentAddress,
       walletInfo.allAccounts,
+      walletInfo.currentAddress,
       isSpinnerVisible,
       navigate,
       hostAddress,
@@ -169,12 +179,15 @@ const GuestRoom = ({hostAddress, contractAddress}: {hostAddress: string; contrac
   const getGameInfo = useCallback(
     async (silentFetch = false) => {
       try {
-        const gameInfo = await getContractInfo(contractAddress, silentFetch);
-        setStakedAmount(gameInfo.stakeAmount);
-        checkGameStatus(gameInfo);
-        setWaitingTimeInSeconds(gameInfo.lastActionAt + gameInfo.timeout - Date.now() / 1000);
-        setDeadlineTimestamp(gameInfo.lastActionAt + gameInfo.timeout);
-        setGameTimeout(gameInfo.timeout);
+        console.log("isFetching", isFetching);
+        if (!isFetching || silentFetch) {
+          const gameInfo = await getContractInfo(contractAddress, silentFetch);
+          setStakedAmount(gameInfo.stakeAmount);
+          checkGameStatus(gameInfo);
+          setWaitingTimeInSeconds(gameInfo.lastActionAt + gameInfo.timeout - Date.now() / 1000);
+          setDeadlineTimestamp(gameInfo.lastActionAt + gameInfo.timeout);
+          setGameTimeout(gameInfo.timeout);
+        }
       } catch (err: any) {
         console.error("Err", err);
         const readableError = err?.message || JSON.stringify(err);

@@ -8,12 +8,21 @@ type GuardedProps = {
 
 const Guarded: React.FC<GuardedProps> = ({children}) => {
   const [isApproved, setIsApproved] = useState(false);
-  const {walletInfo} = useWallet();
+  const {walletInfo, getWalletInfo} = useWallet();
 
   useEffect(() => {
     const checkApproval = async () => {
+      // const provider = (await detectEthereumProvider()) as ethers.providers.Web3Provider;
+      // return provider;
+
       const accounts = await window.ethereum.request({method: "eth_accounts"});
-      if (accounts?.length > 0 || walletInfo.allAccounts?.length > 0) {
+      console.log("Approved accounts in metamask", accounts);
+      console.log("guarded - walletInfo", walletInfo);
+
+      if (accounts?.length > 0) {
+        if (!walletInfo?.currentAddress?.length) {
+          await getWalletInfo();
+        }
         setIsApproved(true);
       } else {
         setIsApproved(false);
@@ -22,7 +31,7 @@ const Guarded: React.FC<GuardedProps> = ({children}) => {
     if (!isApproved) {
       checkApproval();
     }
-  }, [isApproved, walletInfo.allAccounts?.length]);
+  }, [getWalletInfo, isApproved, walletInfo]);
 
   return isApproved ? <>{children}</> : <ConnectMetamask />;
 };

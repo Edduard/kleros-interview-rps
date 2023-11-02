@@ -8,7 +8,7 @@ import useContract from "../../utils/hooks/useContract";
 import {ethers} from "ethers";
 
 const Intro = () => {
-  const {walletInfo, initWalletConnection} = useWallet();
+  const {initWalletConnection} = useWallet();
   const navigate = useNavigate();
   const {
     register,
@@ -18,33 +18,44 @@ const Intro = () => {
     setError,
   } = useForm({mode: "onBlur"});
   const {getContractInfo} = useContract();
+  const {walletInfo} = useWallet();
 
   const createRoom = useCallback(async () => {
     try {
+      if (!walletInfo?.currentAddress?.length) {
+        // We do this because we are on a non-guarded page
+        await initWalletConnection();
+      }
       console.log("createRoom");
-      await initWalletConnection();
+      // await initWalletConnection();
       navigate("/start-game");
     } catch (err) {
       console.error("Err", err);
     }
-  }, [initWalletConnection, navigate]);
+  }, [initWalletConnection, navigate, walletInfo?.currentAddress]);
 
   const joinRoom = useCallback(
     async (args?: any) => {
       try {
+        if (!walletInfo?.currentAddress?.length) {
+          // We do this because we are on a non-guarded page
+          await initWalletConnection();
+        }
         console.log("args", args);
-        const wallet = await initWalletConnection();
+        // await initWalletConnection();
         const gameInfo = await getContractInfo(args.contractAddress);
-        console.log("gameInfo", gameInfo);
-        console.log("wallet.currentAddress", wallet.currentAddress);
+        console.log("walletInfo", walletInfo);
+        console.log("walletInfo.currentAddress", walletInfo.currentAddress);
+        console.log("walletInfo.allAccounts", walletInfo.allAccounts);
+        console.log("wallet.currentAddress", walletInfo.currentAddress);
 
         if (
-          gameInfo.guestAddress.toLowerCase() !== wallet.currentAddress.toLowerCase() &&
-          gameInfo.hostAddress.toLowerCase() !== wallet.currentAddress.toLowerCase()
+          gameInfo.guestAddress.toLowerCase() !== walletInfo.currentAddress.toLowerCase() &&
+          gameInfo.hostAddress.toLowerCase() !== walletInfo.currentAddress.toLowerCase()
         ) {
           if (
-            wallet.allAccounts.map((a: string) => a.toLowerCase()).includes(gameInfo.guestAddress.toLowerCase()) ||
-            wallet.allAccounts.map((a: string) => a.toLowerCase()).includes(gameInfo.hostAddress.toLowerCase())
+            walletInfo.allAccounts.map((a: string) => a.toLowerCase()).includes(gameInfo.guestAddress.toLowerCase()) ||
+            walletInfo.allAccounts.map((a: string) => a.toLowerCase()).includes(gameInfo.hostAddress.toLowerCase())
           ) {
             return setError("contractAddress", {type: "custom", message: "Please select the right Metamask account!"});
           } else {
@@ -64,7 +75,7 @@ const Intro = () => {
         setError("contractAddress", {type: "custom", message: err?.message ?? "Invalid contract"});
       }
     },
-    [getContractInfo, initWalletConnection, navigate, setError]
+    [getContractInfo, initWalletConnection, navigate, setError, walletInfo.allAccounts, walletInfo.currentAddress]
   );
 
   const validateContractAddress = (address: string) => {

@@ -27,7 +27,14 @@ const App = () => {
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
-            <Route path="/start-game" element={<StartGame />} />
+            <Route
+              path="/start-game"
+              element={
+                <Guarded>
+                  <StartGame />
+                </Guarded>
+              }
+            />
             <Route
               path="/room/:hostAddress/:contractAddress"
               element={

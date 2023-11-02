@@ -1,8 +1,8 @@
-import {useCallback, useContext, useEffect} from "react";
+import {useCallback, useContext, useEffect, useState} from "react";
 import {useDispatch, useSelector} from "react-redux";
-import {RootState} from "../redux/store";
+import {RootState, StoreDispatch, resetAllStores} from "../redux/store";
 import {ethers} from "ethers";
-import {storeAllAccounts, storeChainId, storeCurrentAddress} from "../redux/walletSlice";
+import {resetWalletState, storeAllAccounts, storeChainId, storeCurrentAddress} from "../redux/walletSlice";
 import {toast} from "react-toastify";
 import {SpinnerContext} from "../../components/spinner/spinnerContext";
 import {checkMetamaskAvailability, timeoutPromise} from "../utils";
@@ -11,17 +11,26 @@ import {hideSpinner, showSpinner} from "../redux/spinnerSlice";
 
 const useWallet = () => {
   const {defineSpinner} = useContext(SpinnerContext);
-  const dispatch = useDispatch();
-  const {provider, refreshProvider} = useProvider();
+  const dispatch = useDispatch<StoreDispatch>();
+  const {provider} = useProvider();
+  const [isFetching, setIsFetching] = useState(false);
 
   const walletInfo = useSelector((state: RootState) => state.wallet);
 
   const detectExtensionsChanges = useCallback(() => {
+    const _disconnectHandler = async () => {
+      console.log("_disconnectHandler");
+      dispatch(resetAllStores());
+    };
+
     const accountChangedHandler = async (accounts: any) => {
       console.log("accountChangedHandler", accounts);
-
-      dispatch(storeAllAccounts(accounts));
-      dispatch(storeCurrentAddress(accounts[0]));
+      if (accounts?.length > 0) {
+        dispatch(storeAllAccounts(accounts));
+        dispatch(storeCurrentAddress(accounts[0]));
+      } else {
+        _disconnectHandler();
+      }
     };
     window?.ethereum?.on("accountsChanged", accountChangedHandler);
 
@@ -29,14 +38,13 @@ const useWallet = () => {
       const newChainId = ethers.BigNumber.from(chainId).toNumber();
       console.log("chainChangedHandler", newChainId);
       dispatch(storeChainId(newChainId));
-
-      // window.location.reload();
     };
     window?.ethereum?.on("chainChanged", chainChangedHandler);
 
     return {
       accountsChanged: accountChangedHandler,
       chainChanged: chainChangedHandler,
+      disconnect: _disconnectHandler,
     };
   }, [dispatch]);
 
@@ -75,39 +83,49 @@ const useWallet = () => {
         chainId: metamaskCurrentChainId,
       };
     } catch (error: any) {
-      await refreshProvider();
+      // await refreshProvider();
       console.warn("error", error);
       throw error;
     }
-  }, [dispatch, provider, refreshProvider]);
+  }, [dispatch, provider]);
 
-  const initWalletConnection = useCallback(async () => {
-    console.log("initWalletConnection");
-    defineSpinner(<div className="spinner-description">Please connect your Metamask wallet</div>);
-    dispatch(showSpinner());
-    try {
-      checkMetamaskAvailability();
-      console.log("Metamask available");
-      const externalNetworkDetails = await getWalletInfo();
-      console.log("externalNetworkDetails", externalNetworkDetails);
-      return externalNetworkDetails;
-    } catch (err: any) {
-      console.error(err);
-      const readableError = err?.message || JSON.stringify(err);
-      toast(`Error: ${readableError}`, {
-        position: "bottom-center",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: false,
-        draggable: true,
-        type: "error",
-      });
-      throw new Error(readableError);
-    } finally {
-      dispatch(hideSpinner());
-    }
-  }, [defineSpinner, dispatch, getWalletInfo]);
+  const initWalletConnection = useCallback(
+    async (silentFetch = false) => {
+      console.log("initWalletConnection");
+      if (!silentFetch) {
+        defineSpinner(<div className="spinner-description">Connecting your Metamask wallet</div>);
+      }
+      try {
+        if (!silentFetch) {
+          dispatch(showSpinner());
+          setIsFetching(true);
+        }
+        checkMetamaskAvailability();
+        console.log("Metamask available");
+        const externalNetworkDetails = await getWalletInfo();
+        console.log("externalNetworkDetails", externalNetworkDetails);
+      } catch (err: any) {
+        console.error(err);
+        const readableError = err?.message || JSON.stringify(err);
+        toast(`Error: ${readableError}`, {
+          position: "bottom-center",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: false,
+          draggable: true,
+          type: "error",
+        });
+        throw new Error(readableError);
+      } finally {
+        if (!silentFetch) {
+          dispatch(hideSpinner());
+          setIsFetching(false);
+        }
+      }
+    },
+    [defineSpinner, dispatch, getWalletInfo]
+  );
 
   useEffect(() => {
     const changeEventHandlers = detectExtensionsChanges();
@@ -116,9 +134,25 @@ const useWallet = () => {
     };
   }, [walletInfo, detectExtensionsChanges, removeWeb3ChangeListeners]);
 
-  useEffect(() => {
-    console.log("Init useWallet");
-  }, []);
+  // useEffect(() => {
+  //   const getInfo = async () => {
+  //     try {
+  //       const accounts = await window.ethereum.request({method: "eth_accounts"});
+  //       console.log("Approved accounts in metamask", accounts);
+  //       if (!walletInfo?.currentAddress?.length) {
+  //         if (accounts?.length > 0) {
+  //           // await getWalletInfo();
+  //           await initWalletConnection();
+  //         } else {
+  //           throw new Error("Wallet not connected!");
+  //         }
+  //       }
+  //     } catch (err) {
+  //       console.log(err);
+  //     }
+  //   };
+  //   getInfo();
+  // }, []);
 
   return {walletInfo, initWalletConnection, getWalletInfo};
 };
