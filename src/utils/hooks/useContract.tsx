@@ -287,9 +287,6 @@ const useContract = () => {
   const hashMove = useCallback(async (move: Move, salt: string) => {
     const amount = ethers.BigNumber.from(move.value);
 
-    // ToDo: delete this
-    Buffer.from(salt, "hex");
-
     console.log(`Buffer.from(salt, "hex")`, Buffer.from(salt, "hex"));
 
     const numberSalt = ethers.BigNumber.from(Buffer.from(salt, "hex"));

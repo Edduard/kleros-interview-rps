@@ -24,7 +24,7 @@ const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contract
   const [guestMove, setGuestMove] = useState<Move>(emptyMove);
 
   const [stakedAmount, setStakedAmount] = useState<string>("");
-  const {isLoading, getContractInfo, solveGame} = useContract();
+  const {isLoading, getContractInfo, solveGame, timeoutContract} = useContract();
   const {walletInfo} = useWallet();
   const [waitingTimeInSeconds, setWaitingTimeInSeconds] = useState<number>();
   const [deadlineTimestamp, setDeadlineTimestamp] = useState<any>();
@@ -272,13 +272,14 @@ const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contract
 
   const onCountdownEnd = useCallback(async () => {
     try {
-      clearInterval(interval.current);
+      stopInterval();
+      // clearInterval(interval.current);
       navigate("/timeout/" + hostAddress + "/" + contractAddress);
       console.log("Countdown ended");
     } catch (err) {
       console.error("Err", err);
     }
-  }, [contractAddress, hostAddress, navigate]);
+  }, [contractAddress, hostAddress, navigate, stopInterval]);
 
   return (
     <div>
@@ -344,7 +345,8 @@ const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contract
                   className="w-100"
                   content="Play again"
                   onClick={() => {
-                    clearInterval(interval.current);
+                    stopInterval();
+                    // clearInterval(interval.current);
                     navigate("/");
                   }}></ActionButton>
               ) : (

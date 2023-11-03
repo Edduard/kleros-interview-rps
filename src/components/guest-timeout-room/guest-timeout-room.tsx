@@ -23,8 +23,37 @@ const GuestTimeoutRoom = ({hostAddress, contractAddress}: {hostAddress: string; 
   const {walletInfo} = useWallet();
   const dispatch = useDispatch();
 
+  const triggerTimeout = useCallback(async () => {
+    try {
+      if (contractAddress) {
+        await timeoutContract(contractAddress);
+        toast(`Successfully released stake`, {
+          position: "bottom-center",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: false,
+          draggable: true,
+          type: "success",
+        });
+      }
+    } catch (err: any) {
+      console.error("Err", err);
+      const readableError = err?.message || JSON.stringify(err);
+      toast(`Error: ${readableError}`, {
+        position: "bottom-center",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: false,
+        draggable: true,
+        type: "error",
+      });
+    }
+  }, [contractAddress, timeoutContract]);
+
   const checkGameStatus = useCallback(
-    (gameInfo: GameInfo) => {
+    async (gameInfo: GameInfo) => {
       console.log("checkGameStatus - gameInfo", gameInfo);
       console.log("checkGameStatus - walletInfo.allAccounts", walletInfo.allAccounts);
       console.log("checkGameStatus - walletInfo.currentAddress", walletInfo.currentAddress);
@@ -34,7 +63,7 @@ const GuestTimeoutRoom = ({hostAddress, contractAddress}: {hostAddress: string; 
       }
 
       if (gameInfo.guestMove !== emptyMove.value) {
-        // Guest guest its move
+        // Guest move
         setGuestMove(
           availableMoves.find((m: Move) => {
             return m.value === gameInfo.guestMove;
@@ -45,6 +74,23 @@ const GuestTimeoutRoom = ({hostAddress, contractAddress}: {hostAddress: string; 
       if (gameInfo.lastActionAt + gameInfo.timeout >= Date.now() / 1000) {
         // navigate(`/room/${contractAddress}`);
         throw new Error(`Game still on! You have ${Math.floor(gameInfo.timeout / 60)} minutes to play.`);
+      } else {
+        if (parseFloat(gameInfo.stakeAmount) !== 0) {
+          toast(`Automatically releasing funds in 15 seconds ...`, {
+            position: "bottom-center",
+            autoClose: 15000,
+            hideProgressBar: false,
+            closeOnClick: false,
+            pauseOnHover: false,
+            draggable: false,
+            type: "warning",
+          });
+          setTimeout(() => {
+            // Schedule timeout 15 seconds after countdown in order to accommodate
+            // The discrepancies between client and server
+            triggerTimeout();
+          }, 15000);
+        }
       }
 
       if (gameInfo.hostAddress.toLowerCase() === walletInfo.currentAddress.toLowerCase()) {
@@ -102,7 +148,15 @@ const GuestTimeoutRoom = ({hostAddress, contractAddress}: {hostAddress: string; 
         dispatch(hideSpinner());
       }
     },
-    [walletInfo.currentAddress, walletInfo.allAccounts, isSpinnerVisible, defineSpinner, dispatch, navigate]
+    [
+      walletInfo.allAccounts,
+      walletInfo.currentAddress,
+      isSpinnerVisible,
+      triggerTimeout,
+      navigate,
+      defineSpinner,
+      dispatch,
+    ]
   );
 
   const getGameInfo = useCallback(async () => {
@@ -126,36 +180,6 @@ const GuestTimeoutRoom = ({hostAddress, contractAddress}: {hostAddress: string; 
       });
     }
   }, [getContractInfo, contractAddress, checkGameStatus]);
-
-  const triggerTimeout = useCallback(async () => {
-    try {
-      if (contractAddress) {
-        await timeoutContract(contractAddress);
-        getGameInfo();
-        toast(`Successfully retrieved stake`, {
-          position: "bottom-center",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: false,
-          draggable: true,
-          type: "success",
-        });
-      }
-    } catch (err: any) {
-      console.error("Err", err);
-      const readableError = err?.message || JSON.stringify(err);
-      toast(`Error: ${readableError}`, {
-        position: "bottom-center",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: false,
-        draggable: true,
-        type: "error",
-      });
-    }
-  }, [contractAddress, getGameInfo, timeoutContract]);
 
   useEffect(() => {
     console.log("contractAddress", contractAddress);
@@ -191,7 +215,13 @@ const GuestTimeoutRoom = ({hostAddress, contractAddress}: {hostAddress: string; 
 
       <div className="actions-container flex-direction-column">
         <div className="purple-container mt-3">
-          <MovesOverview myMove={guestMove} opponentMove={undisclosedMove} stakeAmount={stakedAmount} />
+          <MovesOverview
+            myMove={guestMove}
+            opponentMove={undisclosedMove}
+            stakeAmount={stakedAmount}
+            userTimedOut={guestMove.value === emptyMove.value}
+            opponentTimedOut={guestMove.value !== emptyMove.value}
+          />
           {parseFloat(stakedAmount) !== 0 ? (
             <ActionButton
               className={`w-100 button-outline-white`}

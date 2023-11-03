@@ -8,12 +8,32 @@ const aBeatsB = (a: number, b: number) => {
 };
 
 const MovesOverview = React.memo(
-  ({myMove, opponentMove, stakeAmount}: {myMove: Move; opponentMove: Move; stakeAmount: string}) => {
+  ({
+    myMove,
+    opponentMove,
+    stakeAmount,
+    userTimedOut = false,
+    opponentTimedOut = false,
+  }: {
+    myMove: Move;
+    opponentMove: Move;
+    stakeAmount: string;
+    userTimedOut?: boolean;
+    opponentTimedOut?: boolean;
+  }) => {
     const getWinningStatus = useCallback(() => {
       console.log("myMove", myMove);
       console.log("opponentMove", opponentMove);
 
       switch (true) {
+        case userTimedOut === true: {
+          return "userTimedOut";
+        }
+
+        case opponentTimedOut === true: {
+          return "opponentTimedOut";
+        }
+
         case opponentMove.value === undisclosedMove.value || opponentMove.value === emptyMove.value: {
           return "undisclosed";
         }
@@ -34,7 +54,7 @@ const MovesOverview = React.memo(
           return "undisclosed";
         }
       }
-    }, [myMove, opponentMove]);
+    }, [myMove, opponentMove, opponentTimedOut, userTimedOut]);
 
     return (
       <>
@@ -88,6 +108,24 @@ const MovesOverview = React.memo(
                 <div className="w-100 text-center">
                   <h1>Tied !</h1>
                   <h2 className="w-100 text-center mt-0 mb-0">You get your stake back !</h2>
+                  <p>Funds will arrive in your wallet soon</p>
+                </div>
+              );
+            }
+            case "userTimedOut": {
+              return (
+                <div className="w-100 text-center">
+                  <h1>You timed out !</h1>
+                  <h2 className="w-100 text-center mt-0 mb-0">You lost your stake !</h2>
+                  <p>Be on time next time!</p>
+                </div>
+              );
+            }
+            case "opponentTimedOut": {
+              return (
+                <div className="w-100 text-center">
+                  <h1>Your opponent timed out !</h1>
+                  <h2 className="w-100 text-center mt-0 mb-0">You win the stake !</h2>
                   <p>Funds will arrive in your wallet soon</p>
                 </div>
               );
