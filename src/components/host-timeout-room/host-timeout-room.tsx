@@ -20,7 +20,7 @@ const HostTimeoutRoom = ({hostAddress, contractAddress}: {hostAddress: string; c
   const [stakedAmount, setStakedAmount] = useState<string>("");
   const navigate = useNavigate();
 
-  const {isFetching, getContractInfo, timeoutContract} = useContract();
+  const {isLoading, getContractInfo, timeoutContract} = useContract();
   const {isSpinnerVisible, defineSpinner} = useContext(SpinnerContext);
   const {walletInfo} = useWallet();
   const dispatch = useDispatch();
@@ -106,7 +106,7 @@ const HostTimeoutRoom = ({hostAddress, contractAddress}: {hostAddress: string; c
 
   const getGameInfo = useCallback(async () => {
     try {
-      if (contractAddress && !isFetching) {
+      if (contractAddress && !isLoading) {
         const gameInfo = await getContractInfo(contractAddress);
         setStakedAmount(gameInfo.stakeAmount);
         const move = (await safelyGetMove()) || undisclosedMove.value.toString();
@@ -132,7 +132,7 @@ const HostTimeoutRoom = ({hostAddress, contractAddress}: {hostAddress: string; c
         type: "error",
       });
     }
-  }, [checkGameStatus, contractAddress, getContractInfo, isFetching]);
+  }, [checkGameStatus, contractAddress, getContractInfo, isLoading]);
 
   const triggerTimeout = useCallback(async () => {
     try {

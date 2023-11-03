@@ -26,7 +26,7 @@ const GuestRoom = ({hostAddress, contractAddress}: {hostAddress: string; contrac
   const interval = useRef<any>();
   const refreshInterval = 15000;
 
-  const {isFetching, getContractInfo, submitGuestMove} = useContract();
+  const {isLoading, getContractInfo, submitGuestMove} = useContract();
   const {isSpinnerVisible, defineSpinner} = useContext(SpinnerContext);
   const {walletInfo} = useWallet();
   const dispatch = useDispatch();
@@ -179,8 +179,8 @@ const GuestRoom = ({hostAddress, contractAddress}: {hostAddress: string; contrac
   const getGameInfo = useCallback(
     async (silentFetch = false) => {
       try {
-        console.log("isFetching", isFetching);
-        if (!isFetching || silentFetch) {
+        console.log("isLoading", isLoading);
+        if (!isLoading || silentFetch) {
           const gameInfo = await getContractInfo(contractAddress, silentFetch);
           setStakedAmount(gameInfo.stakeAmount);
           checkGameStatus(gameInfo);
@@ -202,7 +202,7 @@ const GuestRoom = ({hostAddress, contractAddress}: {hostAddress: string; contrac
         });
       }
     },
-    [checkGameStatus, contractAddress, getContractInfo]
+    [checkGameStatus, contractAddress, getContractInfo, isLoading]
   );
 
   // useEffect(() => {

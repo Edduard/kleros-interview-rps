@@ -13,7 +13,7 @@ const useWallet = () => {
   const {defineSpinner} = useContext(SpinnerContext);
   const dispatch = useDispatch<StoreDispatch>();
   const {provider} = useProvider();
-  const [isFetching, setIsFetching] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const walletInfo = useSelector((state: RootState) => state.wallet);
 
@@ -98,12 +98,13 @@ const useWallet = () => {
       try {
         if (!silentFetch) {
           dispatch(showSpinner());
-          setIsFetching(true);
+          setIsLoading(true);
         }
         checkMetamaskAvailability();
         console.log("Metamask available");
         const externalNetworkDetails = await getWalletInfo();
         console.log("externalNetworkDetails", externalNetworkDetails);
+        return externalNetworkDetails;
       } catch (err: any) {
         console.error(err);
         const readableError = err?.message || JSON.stringify(err);
@@ -120,7 +121,7 @@ const useWallet = () => {
       } finally {
         if (!silentFetch) {
           dispatch(hideSpinner());
-          setIsFetching(false);
+          setIsLoading(false);
         }
       }
     },

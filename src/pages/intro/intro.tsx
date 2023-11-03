@@ -37,25 +37,29 @@ const Intro = () => {
   const joinRoom = useCallback(
     async (args?: any) => {
       try {
+        let walletDetails;
         if (!walletInfo?.currentAddress?.length) {
           // We do this because we are on a non-guarded page
-          await initWalletConnection();
+          walletDetails = await initWalletConnection();
+        } else {
+          walletDetails = walletInfo;
         }
         console.log("args", args);
         // await initWalletConnection();
         const gameInfo = await getContractInfo(args.contractAddress);
-        console.log("walletInfo", walletInfo);
-        console.log("walletInfo.currentAddress", walletInfo.currentAddress);
-        console.log("walletInfo.allAccounts", walletInfo.allAccounts);
-        console.log("wallet.currentAddress", walletInfo.currentAddress);
+        console.log("walletDetails.currentAddress", walletDetails.currentAddress);
+        console.log("walletDetails.allAccounts", walletDetails.allAccounts);
+        console.log("wallet.currentAddress", walletDetails.currentAddress);
 
         if (
-          gameInfo.guestAddress.toLowerCase() !== walletInfo.currentAddress.toLowerCase() &&
-          gameInfo.hostAddress.toLowerCase() !== walletInfo.currentAddress.toLowerCase()
+          gameInfo.guestAddress.toLowerCase() !== walletDetails.currentAddress.toLowerCase() &&
+          gameInfo.hostAddress.toLowerCase() !== walletDetails.currentAddress.toLowerCase()
         ) {
           if (
-            walletInfo.allAccounts.map((a: string) => a.toLowerCase()).includes(gameInfo.guestAddress.toLowerCase()) ||
-            walletInfo.allAccounts.map((a: string) => a.toLowerCase()).includes(gameInfo.hostAddress.toLowerCase())
+            walletDetails.allAccounts
+              .map((a: string) => a.toLowerCase())
+              .includes(gameInfo.guestAddress.toLowerCase()) ||
+            walletDetails.allAccounts.map((a: string) => a.toLowerCase()).includes(gameInfo.hostAddress.toLowerCase())
           ) {
             return setError("contractAddress", {type: "custom", message: "Please select the right Metamask account!"});
           } else {
@@ -75,7 +79,7 @@ const Intro = () => {
         setError("contractAddress", {type: "custom", message: err?.message ?? "Invalid contract"});
       }
     },
-    [getContractInfo, initWalletConnection, navigate, setError, walletInfo.allAccounts, walletInfo.currentAddress]
+    [getContractInfo, initWalletConnection, navigate, setError, walletInfo]
   );
 
   const validateContractAddress = (address: string) => {

@@ -26,7 +26,7 @@ const useContract = () => {
   const {defineSpinner} = useContext(SpinnerContext);
   const {provider} = useProvider();
   const dispatch = useDispatch();
-  const [isFetching, setIsFetching] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const verifyBytecode = useCallback(
     async (_contractAddress: string) => {
@@ -61,7 +61,7 @@ const useContract = () => {
       try {
         if (!silentFetch) {
           dispatch(showSpinner());
-          setIsFetching(true);
+          setIsLoading(true);
         }
         const contract = new ethers.Contract(contractAddress, RPSContract.abi, provider);
         console.log("contract", contract);
@@ -118,7 +118,7 @@ const useContract = () => {
       } finally {
         if (!silentFetch) {
           dispatch(hideSpinner());
-          setIsFetching(false);
+          setIsLoading(false);
         }
       }
     },
@@ -134,7 +134,7 @@ const useContract = () => {
       try {
         if (!silentFetch) {
           dispatch(showSpinner());
-          setIsFetching(true);
+          setIsLoading(true);
         }
         const contract = new ethers.Contract(contractAddress, RPSContract.abi, provider);
         console.log("contract", contract);
@@ -175,7 +175,7 @@ const useContract = () => {
       } finally {
         if (!silentFetch) {
           dispatch(hideSpinner());
-          setIsFetching(false);
+          setIsLoading(false);
         }
       }
     },
@@ -191,7 +191,7 @@ const useContract = () => {
       try {
         if (!silentFetch) {
           dispatch(showSpinner());
-          setIsFetching(true);
+          setIsLoading(true);
         }
         const verifiedContractAddress = await verifyBytecode(contractAddress);
         console.log("verifiedContractAddress", verifiedContractAddress);
@@ -234,7 +234,7 @@ const useContract = () => {
       } finally {
         if (!silentFetch) {
           dispatch(hideSpinner());
-          setIsFetching(false);
+          setIsLoading(false);
         }
       }
     },
@@ -249,7 +249,7 @@ const useContract = () => {
       try {
         if (!silentFetch) {
           dispatch(showSpinner());
-          setIsFetching(true);
+          setIsLoading(true);
         }
         const verifiedContractAddress = await verifyBytecode(contractAddress);
         console.log("verifiedContractAddress", verifiedContractAddress);
@@ -277,7 +277,7 @@ const useContract = () => {
       } finally {
         if (!silentFetch) {
           dispatch(hideSpinner());
-          setIsFetching(false);
+          setIsLoading(false);
         }
       }
     },
@@ -343,7 +343,7 @@ const useContract = () => {
       try {
         if (!silentFetch) {
           dispatch(showSpinner());
-          setIsFetching(true);
+          setIsLoading(true);
         }
         console.log("startDeployment - password", password);
 
@@ -376,7 +376,7 @@ const useContract = () => {
       } finally {
         if (!silentFetch) {
           dispatch(hideSpinner());
-          setIsFetching(false);
+          setIsLoading(false);
         }
       }
     },
@@ -392,7 +392,7 @@ const useContract = () => {
   });
 
   return {
-    isFetching,
+    isLoading,
     startDeployment,
     solveGame,
     hashMove,

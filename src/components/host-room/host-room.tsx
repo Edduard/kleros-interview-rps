@@ -23,7 +23,7 @@ const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contract
   const [guestMove, setGuestMove] = useState<Move>(emptyMove);
 
   const [stakedAmount, setStakedAmount] = useState<string>("");
-  const {isFetching, getContractInfo, solveGame} = useContract();
+  const {isLoading, getContractInfo, solveGame} = useContract();
   const {walletInfo} = useWallet();
   const [waitingTimeInSeconds, setWaitingTimeInSeconds] = useState<number>();
   const [deadlineTimestamp, setDeadlineTimestamp] = useState<any>();
@@ -139,8 +139,8 @@ const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contract
   const getGameInfo = useCallback(
     async (silentFetch = false) => {
       try {
-        console.log("isFetching", isFetching);
-        if (!isFetching || silentFetch) {
+        console.log("isLoading", isLoading);
+        if (!isLoading || silentFetch) {
           const gameInfo = await getContractInfo(contractAddress, silentFetch);
           setStakedAmount(gameInfo.stakeAmount);
 
@@ -163,7 +163,7 @@ const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contract
         });
       }
     },
-    [checkGameStatus, contractAddress, getContractInfo, isFetching]
+    [checkGameStatus, contractAddress, getContractInfo, isLoading]
   );
 
   const {handleModal} = useContext<any>(ModalContext);
