@@ -16,6 +16,7 @@ import MovesOverview from "../moves-overview/moves-overview";
 import Countdown from "../countdown/countdown";
 import {explorersByChainId, safelyOpenExternalUrl} from "../../utils/utils";
 import {hideSpinner, showSpinner} from "../../utils/redux/spinnerSlice";
+import useInterval from "../../utils/hooks/useInterval";
 
 const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contractAddress: string}) => {
   const {hostMove, guestAddress, hostUsedPassword} = useSelector((state: RootState) => state.gameInfo);
@@ -30,7 +31,9 @@ const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contract
   const navigate = useNavigate();
   const {isSpinnerVisible, defineSpinner} = useContext(SpinnerContext);
   const interval = useRef<any>();
-  const refreshInterval = 15000;
+  const refreshInterval = 10000;
+  const {defineInterval, startInterval, pauseInterval, resumeInterval, stopInterval} = useInterval();
+
   const dispatch = useDispatch();
 
   const checkGameStatus = useCallback(
@@ -42,7 +45,8 @@ const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contract
       console.log("emptyMove.value", emptyMove.value);
 
       if (gameInfo.guestMove !== emptyMove.value) {
-        clearInterval(interval.current);
+        stopInterval();
+        // clearInterval(interval.current);
         toast(`Opponent submitted its move. Please reveal your move!`, {
           position: "bottom-center",
           autoClose: 5000,
@@ -75,7 +79,8 @@ const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contract
         console.log("then", new Date((gameInfo.lastActionAt + gameInfo.timeout) * 1000));
 
         // Deadline already passed. Nothing you can do
-        clearInterval(interval.current);
+        stopInterval();
+        // clearInterval(interval.current);
         navigate(`/timeout/${hostAddress}/${contractAddress}`);
         throw new Error(`Game already ended! You had ${Math.floor(gameInfo.timeout / 60)} minutes to show up.`);
       }
@@ -104,7 +109,8 @@ const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contract
                 content="Main screen"
                 onClick={() => {
                   dispatch(hideSpinner());
-                  clearInterval(interval.current);
+                  stopInterval();
+                  // clearInterval(interval.current);
                   navigate("/");
                 }}></ActionButton>
             </div>
@@ -131,6 +137,7 @@ const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contract
       hostAddress,
       isSpinnerVisible,
       navigate,
+      stopInterval,
       walletInfo.allAccounts,
       walletInfo.currentAddress,
     ]
@@ -186,6 +193,7 @@ const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contract
 
   const endGame = useCallback(async () => {
     try {
+      pauseInterval();
       let password = undefined;
       if (hostUsedPassword) {
         password = await openPasswordModal();
@@ -194,7 +202,8 @@ const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contract
 
       const solvedGame = await solveGame(contractAddress, password);
       console.log("solvedGame", solvedGame);
-      clearInterval(interval.current);
+      stopInterval();
+      // clearInterval(interval.current);
       const gameInfo = await getContractInfo(contractAddress);
       console.log("gameInfo", gameInfo);
 
@@ -216,7 +225,7 @@ const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contract
         type: "error",
       });
     }
-  }, [contractAddress, getContractInfo, hostUsedPassword, openPasswordModal, solveGame]);
+  }, [contractAddress, getContractInfo, hostUsedPassword, openPasswordModal, pauseInterval, solveGame, stopInterval]);
 
   // useEffect(() => {
   //   console.log("hostAddress", hostAddress);
@@ -232,11 +241,13 @@ const HostRoom = ({hostAddress, contractAddress}: {hostAddress: string; contract
 
   useEffect(() => {
     getGameInfo();
-    clearInterval(interval.current);
-    interval.current = setInterval(() => {
+    defineInterval(() => {
       getGameInfo(true);
     }, refreshInterval);
-    return () => clearInterval(interval.current);
+    startInterval();
+
+    // return () => clearInterval(interval.current);
+
     // Important, don't include getGameInfo in dependencies array in order to not trigger unwanted rerenders.
   }, [hostAddress, contractAddress, walletInfo]);
 

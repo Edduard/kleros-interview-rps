@@ -12,7 +12,7 @@ import {useEffect} from "react";
 
 const App = () => {
   useEffect(() => {
-    const disableConsoleLogs = false;
+    const disableConsoleLogs = true;
     if (disableConsoleLogs) {
       console.log = () => {};
       console.error = () => {};

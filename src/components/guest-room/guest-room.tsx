@@ -14,6 +14,7 @@ import MovesOverview from "../moves-overview/moves-overview";
 import {explorersByChainId, safelyOpenExternalUrl} from "../../utils/utils";
 import {hideSpinner, showSpinner} from "../../utils/redux/spinnerSlice";
 import {useDispatch} from "react-redux";
+import useInterval from "../../utils/hooks/useInterval";
 
 const GuestRoom = ({hostAddress, contractAddress}: {hostAddress: string; contractAddress: string}) => {
   const [selectedMove, setSelectedMove] = useState<Move>(emptyMove);
@@ -24,7 +25,8 @@ const GuestRoom = ({hostAddress, contractAddress}: {hostAddress: string; contrac
   const [gameTimeout, setGameTimeout] = useState<number>(0);
   const navigate = useNavigate();
   const interval = useRef<any>();
-  const refreshInterval = 15000;
+  const refreshInterval = 10000;
+  const {defineInterval, startInterval, pauseInterval, resumeInterval, stopInterval} = useInterval();
 
   const {isLoading, getContractInfo, submitGuestMove} = useContract();
   const {isSpinnerVisible, defineSpinner} = useContext(SpinnerContext);
@@ -37,13 +39,14 @@ const GuestRoom = ({hostAddress, contractAddress}: {hostAddress: string; contrac
 
   const onCountdownEnd = useCallback(async () => {
     try {
-      clearInterval(interval.current);
+      stopInterval();
+      // clearInterval(interval.current);
       navigate("/timeout/" + hostAddress + "/" + contractAddress);
       console.log("Countdown ended");
     } catch (err) {
       console.error("Err", err);
     }
-  }, [contractAddress, hostAddress, navigate]);
+  }, [contractAddress, hostAddress, navigate, stopInterval]);
 
   const submitMove = useCallback(
     async (move: Move) => {
@@ -60,9 +63,11 @@ const GuestRoom = ({hostAddress, contractAddress}: {hostAddress: string; contrac
         }
       } catch (err) {
         console.error("Err", err);
+      } finally {
+        startInterval();
       }
     },
-    [contractAddress, deadlineTimestamp, gameTimeout, selectedMove, submitGuestMove]
+    [contractAddress, deadlineTimestamp, gameTimeout, selectedMove, startInterval, submitGuestMove]
   );
 
   const checkGameStatus = useCallback(
@@ -71,7 +76,8 @@ const GuestRoom = ({hostAddress, contractAddress}: {hostAddress: string; contrac
       console.log("checkGameStatus - walletInfo.allAccounts", walletInfo.allAccounts);
       console.log("checkGameStatus - walletInfo.currentAddress", walletInfo.currentAddress);
       if (parseFloat(gameInfo.stakeAmount) === 0) {
-        clearInterval(interval.current);
+        stopInterval();
+        // clearInterval(interval.current);
         toast(`Game ended. Check metamask to see if you won!`, {
           position: "bottom-center",
           autoClose: 5000,
@@ -93,7 +99,8 @@ const GuestRoom = ({hostAddress, contractAddress}: {hostAddress: string; contrac
       }
 
       if (gameInfo.lastActionAt + gameInfo.timeout < Date.now() / 1000) {
-        clearInterval(interval.current);
+        stopInterval();
+        // clearInterval(interval.current);
         navigate(`/timeout/${hostAddress}/${contractAddress}`);
         throw new Error(`Game already ended! You had ${Math.floor(gameInfo.timeout / 60)} minutes to show up.`);
       }
@@ -125,7 +132,8 @@ const GuestRoom = ({hostAddress, contractAddress}: {hostAddress: string; contrac
                 content="Main screen"
                 onClick={() => {
                   dispatch(hideSpinner());
-                  clearInterval(interval.current);
+                  stopInterval();
+                  // clearInterval(interval.current);
                   navigate("/");
                 }}></ActionButton>
             </div>
@@ -149,6 +157,7 @@ const GuestRoom = ({hostAddress, contractAddress}: {hostAddress: string; contrac
       walletInfo.allAccounts,
       walletInfo.currentAddress,
       isSpinnerVisible,
+      stopInterval,
       navigate,
       hostAddress,
       contractAddress,
@@ -213,15 +222,25 @@ const GuestRoom = ({hostAddress, contractAddress}: {hostAddress: string; contrac
   //   // Important, don't include getGameInfo in dependencies array in order to not trigger unwanted rerenders.
   // }, [hostAddress, contractAddress]);
 
+  // useEffect(() => {
+  //   getGameInfo();
+  //   clearInterval(interval.current);
+  //   interval.current = setInterval(() => {
+  //     getGameInfo(true);
+  //   }, refreshInterval);
+  //   return () => clearInterval(interval.current);
+  //   // Important, don't include getGameInfo in dependencies array in order to not trigger unwanted rerenders.
+  // }, [hostAddress, contractAddress, walletInfo]);
+
   useEffect(() => {
     getGameInfo();
-    clearInterval(interval.current);
-    interval.current = setInterval(() => {
+    defineInterval(() => {
       getGameInfo(true);
     }, refreshInterval);
-    return () => clearInterval(interval.current);
+
+    // return () => clearInterval(interval.current);
     // Important, don't include getGameInfo in dependencies array in order to not trigger unwanted rerenders.
-  }, [hostAddress, contractAddress, walletInfo]);
+  }, [hostAddress, contractAddress, walletInfo, defineInterval]);
 
   useEffect(() => {
     console.log("GuestRoom rerender");
